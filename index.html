@@ -115,6 +115,17 @@ body{background:var(--bg);color:var(--text);font-family:var(--display);min-heigh
 .chat-who{font-size:12px;font-weight:600;color:var(--accent2);margin-bottom:4px;font-family:var(--mono)}
 .chat-msg{font-size:14px;color:var(--text);line-height:1.5}
 .chat-time{font-size:11px;color:var(--muted);margin-top:3px;font-family:var(--mono)}
+.game-row{padding:14px 0;border-bottom:1px solid var(--border)}
+.game-row:last-child{border-bottom:none}
+.game-title{font-size:15px;font-weight:700;margin-bottom:4px;display:flex;align-items:center;gap:8px}
+.game-badge{font-size:10px;padding:2px 8px;border-radius:50px;font-family:var(--mono);font-weight:500}
+.game-badge.safe{background:rgba(0,229,160,.12);color:var(--accent)}
+.game-badge.warn{background:rgba(255,107,107,.12);color:var(--warn)}
+.game-badge.neutral{background:rgba(255,255,255,.07);color:var(--muted)}
+.game-desc{font-size:13px;color:var(--muted);line-height:1.5;margin:4px 0}
+.game-time{font-size:11px;color:var(--muted);font-family:var(--mono);margin-top:4px}
+.game-dur{color:var(--accent2);font-weight:500}
+.auto-badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-family:var(--mono);color:var(--accent);background:rgba(0,229,160,.08);border:1px solid rgba(0,229,160,.2);border-radius:50px;padding:3px 10px;margin-left:auto}
 </style>
 </head>
 <body>
@@ -218,11 +229,13 @@ body{background:var(--bg);color:var(--text);font-family:var(--display);min-heigh
     </div>
 
     <div class="tabs">
-      <button class="tab active" onclick="sw('h',this)">Historia</button>
+      <button class="tab active" onclick="sw('h',this)">Status</button>
+      <button class="tab" onclick="sw('g',this)">Gry ▸</button>
       <button class="tab" onclick="sw('f',this)">Znajomi</button>
       <button class="tab" id="chatTab" onclick="sw('c',this)" style="display:none">Czat</button>
     </div>
     <div class="panel active" id="hPanel"></div>
+    <div class="panel" id="gPanel"></div>
     <div class="panel" id="fPanel"></div>
     <div class="panel" id="cPanel"></div>
   </div>
@@ -432,6 +445,16 @@ async function loadProfile() {
 
   renderHistory(pres, user);
   renderFriends(friends);
+
+  // Loguj grę jeśli aktualnie gra
+  var pt2 = pres.userPresenceType || 0;
+  if (pt2 === 2 && pres.lastLocation) {
+    logGame(S.uid, pres.lastLocation, pres.placeId || '');
+  }
+  // Załaduj historię gier
+  loadGameHistory(S.uid);
+  // Uruchom auto-check co 5 minut
+  startAutoCheck(S.uid);
 
   // Czat tylko z cookie
   if (cookie) {
@@ -662,6 +685,145 @@ function renderChips() {
 function loadSaved(id, name) {
   S.uid=id; S.uname=name; q('uIn').value=name;
   q('profEl').style.display='none'; loadProfile();
+}
+
+// ─── GAME HISTORY ────────────────────────────────────────────────────────────
+var gameLog = [];       // lokalna kopia historii
+var autoTimer = null;   // timer 5min
+
+async function logGame(uid, game, gameId) {
+  if (!game || game === 'Website') return;
+  try {
+    await fetch(WORKER + '?action=log&uid=' + uid + '&game=' + encodeURIComponent(game) + '&gameId=' + (gameId||''));
+  } catch(e) {}
+  // Też lokalnie
+  var last = gameLog[0];
+  var now = Date.now();
+  if (!last || last.game !== game || (now - last.start) > 10*60*1000) {
+    gameLog.unshift({ game: game, gameId: gameId||'', start: now, ts: new Date().toISOString() });
+    if (gameLog.length > 200) gameLog = gameLog.slice(0,200);
+    try { localStorage.setItem('rw_gamelog_' + uid, JSON.stringify(gameLog)); } catch(e) {}
+  }
+}
+
+async function loadGameHistory(uid) {
+  var el = q('gPanel');
+  el.innerHTML = '<div class="empty" style="padding:20px 0">Ładowanie historii...</div>';
+  
+  // Spróbuj z KV workera
+  try {
+    var r = await fetch(WORKER + '?action=gethistory&uid=' + uid);
+    var data = await r.json();
+    if (Array.isArray(data) && data.length) {
+      gameLog = data;
+      try { localStorage.setItem('rw_gamelog_' + uid, JSON.stringify(gameLog)); } catch(e) {}
+    }
+  } catch(e) {}
+
+  // Fallback localStorage
+  if (!gameLog.length) {
+    try {
+      var cached = localStorage.getItem('rw_gamelog_' + uid);
+      if (cached) gameLog = JSON.parse(cached);
+    } catch(e) {}
+  }
+
+  renderGameHistory();
+}
+
+function renderGameHistory() {
+  var el = q('gPanel');
+  if (!gameLog.length) {
+    el.innerHTML = '<div class="empty">Brak historii gier.<br><small style="color:var(--muted)">Historia będzie się tu pojawiać automatycznie gdy dziecko gra.<br>Aplikacja sprawdza co 5 minut.</small></div>';
+    return;
+  }
+
+  // Grupuj po dniach
+  var byDay = {};
+  gameLog.forEach(function(entry) {
+    var d = new Date(entry.ts || entry.start);
+    var day = d.toLocaleDateString('pl-PL', { weekday:'long', day:'numeric', month:'long' });
+    if (!byDay[day]) byDay[day] = [];
+    byDay[day].push(entry);
+  });
+
+  var html = '';
+  Object.keys(byDay).forEach(function(day) {
+    html += '<div style="font-size:11px;font-weight:600;color:var(--accent2);text-transform:uppercase;letter-spacing:1px;padding:12px 0 6px;font-family:var(--mono)">' + day + '</div>';
+    byDay[day].forEach(function(entry, i) {
+      var next = byDay[day][i+1];
+      var dur = '';
+      if (next) {
+        var mins = Math.round((entry.start - next.start) / 60000);
+        if (mins > 0 && mins < 600) dur = mins + ' min';
+      }
+      var timeStr = new Date(entry.ts || entry.start).toLocaleTimeString('pl-PL', {hour:'2-digit',minute:'2-digit'});
+      var info = GAME_INFO[entry.game] || null;
+      var badge = info ? (info.safe ? '<span class="game-badge safe">✓ bezpieczna</span>' : '<span class="game-badge warn">⚠ sprawdź</span>') : '<span class="game-badge neutral">nieznana</span>';
+      
+      html += '<div class="game-row">' +
+        '<div class="game-title">🎮 ' + escHtml(entry.game) + ' ' + badge + '</div>' +
+        (info ? '<div class="game-desc">' + escHtml(info.desc) + '</div>' : '') +
+        '<div class="game-time">' + timeStr + (dur ? ' &bull; <span class="game-dur">' + dur + '</span>' : '') + '</div>' +
+        '</div>';
+    });
+  });
+
+  el.innerHTML = html;
+}
+
+// Baza opisów popularnych gier Roblox
+var GAME_INFO = {
+  'Adopt Me!': { safe: true, desc: 'Symulator opieki nad zwierzętami i handlu. Popularna gra dla dzieci, przyjazna treściowo.' },
+  'Brookhaven 🏡RP': { safe: true, desc: 'Symulator życia miejskiego i odgrywania ról. Ogólnie bezpieczna, choć warto monitorować czat.' },
+  'Blox Fruits': { safe: true, desc: 'Gra przygodowa inspirowana anime One Piece. Walki, eksploracja, zdobywanie mocy.' },
+  'Murder Mystery 2': { safe: true, desc: 'Gra detektywistyczna — gracz jest mordercą, detektywem lub niewinnym. Brak przemocy graficznej.' },
+  'Tower of Hell': { safe: true, desc: 'Gra zręcznościowa — wspinaczka na trudne wieże. Brak przemocy, dobra dla każdego wieku.' },
+  'Pet Simulator X': { safe: true, desc: 'Zbieranie i ulepszanie wirtualnych zwierzaków. Mechniki similar do gier gacha.' },
+  'Arsenal': { safe: false, desc: 'Strzelanka first-person z różnymi broniami. Zawiera przemoc, bardziej odpowiednia dla starszych dzieci.' },
+  'Jailbreak': { safe: true, desc: 'Symulator policja vs. złodzieje. Otwisty świat, prowadzenie pojazdów, ucieczki z więzienia.' },
+  'Royale High': { safe: true, desc: 'Symulator szkoły z motywem fantasy. Bardzo popularna wśród dziewcząt, skupia się na ubieraniu postaci.' },
+  'Piggy': { safe: true, desc: 'Gra survivalowa inspirowana serialem Peppa Pig. Elementy horroru, może straszyć młodsze dzieci.' },
+  'Shindo Life': { safe: true, desc: 'Gra RPG inspirowana anime Naruto. Walki i eksploracja świata ninja.' },
+  'Da Hood': { safe: false, desc: 'Symulator życia ulicznego z gangami i przemocą. Nieodpowiednia dla młodszych dzieci.' },
+  'Work at a Pizza Place': { safe: true, desc: 'Symulator pracy w pizzerii. Klasyczna, spokojna gra dla każdego wieku.' },
+  'Natural Disaster Survival': { safe: true, desc: 'Przetrwanie katastrof naturalnych. Spokojna, edukacyjna gra bez przemocy.' },
+  '[UPD] +1 Speed Every Second': { safe: true, desc: 'Gra symulatorowa — zbieranie prędkości. Prosta mechanika, dobra dla dzieci.' },
+  'Realistic Street Car Roleplay': { safe: true, desc: 'Symulator jazdy samochodami w realistycznym środowisku miejskim.' },
+  'Dog Pound': { safe: true, desc: 'Symulator schroniska dla psów — opieka nad zwierzętami.' },
+  'RIVALS': { safe: false, desc: 'Strzelanka wieloosobowa z dynamiczną akcją. Zawiera elementy przemocy.' },
+};
+
+// Auto-sprawdzanie co 5 minut
+function startAutoCheck(uid) {
+  if (autoTimer) clearInterval(autoTimer);
+  autoTimer = setInterval(async function() {
+    if (!S.uid) return;
+    try {
+      var r = await fetch(WORKER + '?action=log&uid=' + uid, { method: 'GET' });
+      // Pobierz aktualny presence
+      var presRes = await fetch(WORKER + '?url=' + encodeURIComponent('https://presence.roblox.com/v1/presence/users') + (cookie ? '&c=' + encodeURIComponent(cookie) : ''), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userIds: [parseInt(uid)] })
+      });
+      var presData = await presRes.json();
+      var pres = (presData.userPresences || [])[0] || {};
+      var pt = pres.userPresenceType || 0;
+      if (pt === 2 && pres.lastLocation) {
+        await logGame(uid, pres.lastLocation, pres.placeId || '');
+        // Odśwież panel historii jeśli otwarty
+        if (q('gPanel').classList.contains('active')) renderGameHistory();
+        // Aktualizuj status w UI
+        q('pBadgeTxt').textContent = 'Teraz gra';
+        q('pBadge').className = 'pbadge on';
+        q('liveDot').style.display = 'block';
+        q('nowEl').style.display = 'block';
+        q('nowGame').textContent = pres.lastLocation;
+        q('nowMeta').textContent = 'od ostatniego sprawdzenia';
+      }
+    } catch(e) {}
+  }, 5 * 60 * 1000); // co 5 minut
 }
 
 init();
