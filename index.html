@@ -6,1152 +6,379 @@
 <title>RobloxWatch — Kontrola rodzicielska</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --bg: #0a0a0f;
-    --surface: #13131a;
-    --surface2: #1c1c27;
-    --border: rgba(255,255,255,0.07);
-    --accent: #00e5a0;
-    --accent2: #7c6fff;
-    --warn: #ff6b6b;
-    --text: #f0f0f8;
-    --muted: #6b6b88;
-    --online: #00e5a0;
-    --offline: #444455;
-    --radius: 16px;
-    --font-display: 'Syne', sans-serif;
-    --font-mono: 'DM Mono', monospace;
-  }
-
-  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: var(--font-display);
-    min-height: 100dvh;
-    max-width: 480px;
-    margin: 0 auto;
-    overflow-x: hidden;
-  }
-
-  /* Noise overlay */
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
-    pointer-events: none;
-    z-index: 0;
-    opacity: 0.4;
-  }
-
-  .app { position: relative; z-index: 1; }
-
-  /* Header */
-  .header {
-    padding: 20px 20px 0;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-
-  .logo {
-    font-size: 18px;
-    font-weight: 800;
-    letter-spacing: -0.5px;
-    color: var(--text);
-  }
-
-  .logo span { color: var(--accent); }
-
-  .pulse-dot {
-    width: 8px; height: 8px;
-    border-radius: 50%;
-    background: var(--accent);
-    box-shadow: 0 0 0 0 rgba(0,229,160,0.4);
-    animation: pulse 2s infinite;
-  }
-
-  @keyframes pulse {
-    0% { box-shadow: 0 0 0 0 rgba(0,229,160,0.4); }
-    70% { box-shadow: 0 0 0 8px rgba(0,229,160,0); }
-    100% { box-shadow: 0 0 0 0 rgba(0,229,160,0); }
-  }
-
-  /* Search section */
-  .search-section {
-    padding: 24px 20px 16px;
-  }
-
-  .search-label {
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 2px;
-    color: var(--muted);
-    text-transform: uppercase;
-    margin-bottom: 10px;
-  }
-
-  .search-row {
-    display: flex;
-    gap: 8px;
-  }
-
-  .search-input {
-    flex: 1;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 14px 16px;
-    font-family: var(--font-mono);
-    font-size: 14px;
-    color: var(--text);
-    outline: none;
-    transition: border-color 0.2s;
-  }
-
-  .search-input:focus {
-    border-color: var(--accent);
-  }
-
-  .search-input::placeholder { color: var(--muted); }
-
-  .search-btn {
-    background: var(--accent);
-    border: none;
-    border-radius: 12px;
-    width: 52px;
-    height: 52px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 20px;
-    transition: transform 0.15s, opacity 0.15s;
-    flex-shrink: 0;
-  }
-
-  .search-btn:active { transform: scale(0.93); opacity: 0.85; }
-  .search-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-
-  /* Saved kids */
-  .saved-section { padding: 0 20px 20px; }
-
-  .saved-chips {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-  }
-
-  .chip {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 50px;
-    padding: 6px 14px;
-    font-size: 12px;
-    font-family: var(--font-mono);
-    color: var(--muted);
-    cursor: pointer;
-    transition: all 0.15s;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-
-  .chip:hover, .chip:active { border-color: var(--accent); color: var(--accent); }
-
-  .chip .dot {
-    width: 6px; height: 6px;
-    border-radius: 50%;
-    background: var(--offline);
-  }
-
-  .chip.online .dot { background: var(--online); }
-
-  /* Loading */
-  .loading {
-    display: none;
-    flex-direction: column;
-    align-items: center;
-    padding: 60px 20px;
-    gap: 16px;
-  }
-
-  .loading.active { display: flex; }
-
-  .spinner {
-    width: 40px; height: 40px;
-    border: 2px solid var(--border);
-    border-top-color: var(--accent);
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-  }
-
-  @keyframes spin { to { transform: rotate(360deg); } }
-
-  .loading-text {
-    font-family: var(--font-mono);
-    font-size: 13px;
-    color: var(--muted);
-    animation: blink 1.5s infinite;
-  }
-
-  @keyframes blink { 50% { opacity: 0.3; } }
-
-  /* Error */
-  .error-box {
-    display: none;
-    margin: 0 20px;
-    background: rgba(255,107,107,0.1);
-    border: 1px solid rgba(255,107,107,0.25);
-    border-radius: var(--radius);
-    padding: 16px;
-    font-size: 14px;
-    color: var(--warn);
-    font-family: var(--font-mono);
-  }
-
-  .error-box.active { display: block; }
-
-  /* Profile card */
-  .profile-section {
-    display: none;
-    padding: 0 20px;
-  }
-
-  .profile-section.active { display: block; }
-
-  .profile-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 20px;
-    margin-bottom: 16px;
-    position: relative;
-    overflow: hidden;
-  }
-
-  .profile-card::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 2px;
-    background: linear-gradient(90deg, var(--accent), var(--accent2));
-  }
-
-  .profile-top {
-    display: flex;
-    gap: 16px;
-    align-items: center;
-    margin-bottom: 16px;
-  }
-
-  .avatar-wrap {
-    position: relative;
-    flex-shrink: 0;
-  }
-
-  .avatar {
-    width: 72px;
-    height: 72px;
-    border-radius: 14px;
-    background: var(--surface2);
-    object-fit: cover;
-  }
-
-  .avatar-status {
-    position: absolute;
-    bottom: -3px;
-    right: -3px;
-    width: 16px;
-    height: 16px;
-    border-radius: 50%;
-    border: 2px solid var(--surface);
-    background: var(--offline);
-  }
-
-  .avatar-status.online { background: var(--online); animation: pulse 2s infinite; }
-
-  .profile-info { flex: 1; min-width: 0; }
-
-  .profile-name {
-    font-size: 22px;
-    font-weight: 800;
-    letter-spacing: -0.5px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .profile-sub {
-    font-family: var(--font-mono);
-    font-size: 12px;
-    color: var(--muted);
-    margin-top: 3px;
-  }
-
-  .status-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    margin-top: 8px;
-    padding: 5px 12px;
-    border-radius: 50px;
-    font-size: 12px;
-    font-weight: 600;
-    font-family: var(--font-mono);
-  }
-
-  .status-badge.online {
-    background: rgba(0,229,160,0.12);
-    color: var(--accent);
-  }
-
-  .status-badge.offline {
-    background: rgba(255,255,255,0.05);
-    color: var(--muted);
-  }
-
-  .status-badge .dot {
-    width: 6px; height: 6px;
-    border-radius: 50%;
-    background: currentColor;
-  }
-
-  /* Stats row */
-  .stats-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 8px;
-  }
-
-  .stat-box {
-    background: var(--surface2);
-    border-radius: 10px;
-    padding: 12px 10px;
-    text-align: center;
-  }
-
-  .stat-val {
-    font-size: 18px;
-    font-weight: 700;
-    color: var(--text);
-    font-family: var(--font-mono);
-  }
-
-  .stat-lbl {
-    font-size: 10px;
-    color: var(--muted);
-    margin-top: 2px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-
-  /* Current game */
-  .current-game-card {
-    background: linear-gradient(135deg, rgba(0,229,160,0.08), rgba(124,111,255,0.08));
-    border: 1px solid rgba(0,229,160,0.2);
-    border-radius: var(--radius);
-    padding: 16px 20px;
-    margin-bottom: 16px;
-    display: none;
-  }
-
-  .current-game-card.active { display: block; }
-
-  .cg-label {
-    font-size: 10px;
-    font-weight: 600;
-    letter-spacing: 2px;
-    color: var(--accent);
-    text-transform: uppercase;
-    margin-bottom: 8px;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-
-  .cg-label::before {
-    content: '';
-    width: 6px; height: 6px;
-    border-radius: 50%;
-    background: var(--accent);
-    animation: pulse 1.5s infinite;
-  }
-
-  .cg-name {
-    font-size: 18px;
-    font-weight: 700;
-    margin-bottom: 4px;
-  }
-
-  .cg-meta {
-    font-family: var(--font-mono);
-    font-size: 12px;
-    color: var(--muted);
-  }
-
-  /* Section title */
-  .section-title {
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 2px;
-    color: var(--muted);
-    text-transform: uppercase;
-    padding: 0 20px;
-    margin-bottom: 12px;
-    margin-top: 24px;
-  }
-
-  /* AI Analysis */
-  .ai-card {
-    margin: 0 20px 16px;
-    background: var(--surface);
-    border: 1px solid rgba(124,111,255,0.2);
-    border-radius: var(--radius);
-    padding: 18px;
-    display: none;
-  }
-
-  .ai-card.active { display: block; }
-
-  .ai-header {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 12px;
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 1.5px;
-    color: var(--accent2);
-    text-transform: uppercase;
-  }
-
-  .ai-text {
-    font-size: 14px;
-    line-height: 1.65;
-    color: rgba(240,240,248,0.8);
-  }
-
-  .ai-loading {
-    display: flex;
-    gap: 4px;
-    align-items: center;
-    height: 20px;
-  }
-
-  .ai-dot {
-    width: 6px; height: 6px;
-    border-radius: 50%;
-    background: var(--accent2);
-    animation: aiDot 1.2s ease-in-out infinite;
-  }
-
-  .ai-dot:nth-child(2) { animation-delay: 0.2s; }
-  .ai-dot:nth-child(3) { animation-delay: 0.4s; }
-
-  @keyframes aiDot {
-    0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
-    40% { transform: scale(1); opacity: 1; }
-  }
-
-  /* Friends */
-  .friends-section {
-    padding: 0 20px;
-    display: none;
-  }
-
-  .friends-section.active { display: block; }
-
-  .friend-row {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 12px 0;
-    border-bottom: 1px solid var(--border);
-  }
-
-  .friend-row:last-child { border-bottom: none; }
-
-  .friend-avatar {
-    width: 36px; height: 36px;
-    border-radius: 8px;
-    background: var(--surface2);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 14px;
-    font-weight: 700;
-    flex-shrink: 0;
-  }
-
-  .friend-name {
-    flex: 1;
-    font-size: 14px;
-    font-weight: 600;
-  }
-
-  .friend-status {
-    font-family: var(--font-mono);
-    font-size: 11px;
-    color: var(--muted);
-  }
-
-  .friend-online { color: var(--accent); }
-
-  /* History */
-  .history-section {
-    padding: 0 20px 100px;
-    display: none;
-  }
-
-  .history-section.active { display: block; }
-
-  .history-item {
-    display: flex;
-    gap: 14px;
-    align-items: flex-start;
-    padding: 14px 0;
-    border-bottom: 1px solid var(--border);
-    animation: slideIn 0.3s ease both;
-  }
-
-  @keyframes slideIn {
-    from { opacity: 0; transform: translateY(8px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-  .history-icon {
-    width: 40px; height: 40px;
-    border-radius: 10px;
-    background: var(--surface2);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 18px;
-    flex-shrink: 0;
-  }
-
-  .history-info { flex: 1; min-width: 0; }
-
-  .history-name {
-    font-size: 14px;
-    font-weight: 600;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    margin-bottom: 3px;
-  }
-
-  .history-meta {
-    font-family: var(--font-mono);
-    font-size: 11px;
-    color: var(--muted);
-  }
-
-  .history-dur {
-    font-family: var(--font-mono);
-    font-size: 12px;
-    color: var(--accent);
-    flex-shrink: 0;
-    font-weight: 500;
-  }
-
-  /* Bottom nav */
-  .bottom-nav {
-    position: fixed;
-    bottom: 0; left: 50%;
-    transform: translateX(-50%);
-    width: 100%;
-    max-width: 480px;
-    background: rgba(10,10,15,0.95);
-    backdrop-filter: blur(20px);
-    border-top: 1px solid var(--border);
-    display: flex;
-    padding: 12px 0 20px;
-    z-index: 100;
-  }
-
-  .nav-btn {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-    background: none;
-    border: none;
-    color: var(--muted);
-    font-family: var(--font-display);
-    font-size: 10px;
-    font-weight: 600;
-    letter-spacing: 0.5px;
-    cursor: pointer;
-    transition: color 0.2s;
-    padding: 4px 0;
-  }
-
-  .nav-btn.active { color: var(--accent); }
-
-  .nav-icon { font-size: 22px; }
-
-  /* Empty state */
-  .empty {
-    text-align: center;
-    padding: 48px 32px;
-    color: var(--muted);
-  }
-
-  .empty-icon { font-size: 48px; margin-bottom: 16px; opacity: 0.5; }
-
-  .empty-title {
-    font-size: 18px;
-    font-weight: 700;
-    color: var(--text);
-    margin-bottom: 8px;
-  }
-
-  .empty-sub { font-size: 14px; line-height: 1.6; }
-
-  /* Tabs within profile */
-  .inner-tabs {
-    display: flex;
-    padding: 0 20px;
-    gap: 0;
-    margin-bottom: 8px;
-  }
-
-  .inner-tab {
-    flex: 1;
-    padding: 10px 0;
-    text-align: center;
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--muted);
-    border-bottom: 2px solid var(--border);
-    cursor: pointer;
-    transition: all 0.2s;
-    background: none;
-    border-top: none;
-    border-left: none;
-    border-right: none;
-    font-family: var(--font-display);
-    letter-spacing: 0.3px;
-  }
-
-  .inner-tab.active {
-    color: var(--accent);
-    border-bottom-color: var(--accent);
-  }
-
-  .inner-panel { display: none; }
-  .inner-panel.active { display: block; }
-
-  /* Scrollbar */
-  ::-webkit-scrollbar { width: 4px; }
-  ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
-
-  .refresh-btn {
-    background: none;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    color: var(--muted);
-    font-size: 16px;
-    width: 36px; height: 36px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s;
-  }
-  .refresh-btn:active { transform: rotate(180deg); color: var(--accent); }
-
-  .tag {
-    display: inline-block;
-    background: rgba(124,111,255,0.12);
-    color: var(--accent2);
-    font-size: 10px;
-    font-family: var(--font-mono);
-    padding: 2px 8px;
-    border-radius: 50px;
-    margin-left: 6px;
-    vertical-align: middle;
-  }
+:root{--bg:#0a0a0f;--surface:#13131a;--surface2:#1c1c27;--border:rgba(255,255,255,0.07);--accent:#00e5a0;--accent2:#7c6fff;--warn:#ff6b6b;--text:#f0f0f8;--muted:#6b6b88;--radius:16px;--mono:'DM Mono',monospace;--display:'Syne',sans-serif}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{background:var(--bg);color:var(--text);font-family:var(--display);min-height:100dvh;max-width:500px;margin:0 auto;padding:0 0 40px}
+.hdr{display:flex;align-items:center;justify-content:space-between;padding:20px 20px 0}
+.logo{font-size:18px;font-weight:800;letter-spacing:-0.5px}.logo span{color:var(--accent)}
+.live{width:8px;height:8px;border-radius:50%;background:var(--accent);animation:pulse 2s infinite;display:none}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(0,229,160,.4)}70%{box-shadow:0 0 0 8px rgba(0,229,160,0)}100%{box-shadow:0 0 0 0 rgba(0,229,160,0)}}
+.search{padding:20px 20px 0}
+.slabel{font-size:11px;font-weight:600;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:8px}
+.srow{display:flex;gap:8px}
+.sinput{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px;font-family:var(--mono);font-size:14px;color:var(--text);outline:none;transition:border-color .2s}
+.sinput:focus{border-color:var(--accent)}.sinput::placeholder{color:var(--muted)}
+.sbtn{background:var(--accent);border:none;border-radius:12px;width:52px;height:52px;cursor:pointer;font-size:20px;transition:transform .15s,opacity .15s;flex-shrink:0}
+.sbtn:active{transform:scale(.93);opacity:.85}.sbtn:disabled{opacity:.4;cursor:not-allowed}
+.chips{padding:10px 20px 0;display:flex;gap:6px;flex-wrap:wrap}
+.chip{background:var(--surface);border:1px solid var(--border);border-radius:50px;padding:5px 12px;font-size:12px;font-family:var(--mono);color:var(--muted);cursor:pointer;transition:all .15s}
+.chip:hover{border-color:var(--accent);color:var(--accent)}
+.msg{padding:10px 20px;font-size:13px;font-family:var(--mono);color:var(--muted);display:none}
+.err{margin:10px 20px;background:rgba(255,107,107,.1);border:1px solid rgba(255,107,107,.25);border-radius:12px;padding:14px 16px;font-size:13px;color:var(--warn);font-family:var(--mono);line-height:1.5;display:none}
+.prof{display:none;padding:0 20px}
+.pcard{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:12px;position:relative;overflow:hidden}
+.pcard::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--accent),var(--accent2))}
+.ptop{display:flex;gap:14px;align-items:center;margin-bottom:16px}
+.avi{width:68px;height:68px;border-radius:12px;background:var(--surface2);object-fit:cover;flex-shrink:0}
+.avi-init{width:68px;height:68px;border-radius:12px;background:rgba(0,229,160,.12);color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700;flex-shrink:0}
+.pname{font-size:20px;font-weight:800;letter-spacing:-.5px}
+.psub{font-family:var(--mono);font-size:12px;color:var(--muted);margin-top:2px}
+.pbadge{display:inline-flex;align-items:center;gap:5px;margin-top:8px;padding:4px 12px;border-radius:50px;font-size:12px;font-weight:600;font-family:var(--mono)}
+.pbadge.on{background:rgba(0,229,160,.12);color:var(--accent)}
+.pbadge.off{background:rgba(255,255,255,.05);color:var(--muted)}
+.pbadge .dot{width:5px;height:5px;border-radius:50%;background:currentColor}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stat{background:var(--surface2);border-radius:10px;padding:12px 8px;text-align:center}
+.sv{font-size:18px;font-weight:700;font-family:var(--mono)}.sl{font-size:10px;color:var(--muted);margin-top:2px;text-transform:uppercase;letter-spacing:.5px}
+.now{background:rgba(0,229,160,.07);border:1px solid rgba(0,229,160,.2);border-radius:var(--radius);padding:14px 18px;margin-bottom:12px;display:none}
+.now-lbl{font-size:10px;font-weight:600;letter-spacing:2px;color:var(--accent);text-transform:uppercase;margin-bottom:6px;display:flex;align-items:center;gap:6px}
+.now-lbl::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--accent);animation:pulse 1.5s infinite}
+.now-game{font-size:17px;font-weight:700}.now-meta{font-size:12px;color:var(--muted);margin-top:3px;font-family:var(--mono)}
+.ai{background:var(--surface);border:1px solid rgba(124,111,255,.2);border-radius:var(--radius);padding:16px 18px;margin-bottom:12px;display:none}
+.ai-lbl{font-size:10px;font-weight:600;letter-spacing:2px;color:var(--accent2);text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.ai-txt{font-size:14px;line-height:1.65;color:rgba(240,240,248,.8)}
+.dots{display:flex;gap:4px}.d{width:6px;height:6px;border-radius:50%;background:var(--accent2);animation:db 1.2s infinite}
+.d:nth-child(2){animation-delay:.2s}.d:nth-child(3){animation-delay:.4s}
+@keyframes db{0%,80%,100%{opacity:.3;transform:scale(.7)}40%{opacity:1;transform:scale(1)}}
+.tabs{display:flex;border-bottom:1px solid var(--border);margin-bottom:8px}
+.tab{flex:1;padding:10px 0;font-size:12px;font-weight:600;color:var(--muted);background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;font-family:var(--display);transition:all .15s;letter-spacing:.3px}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.panel{display:none}.panel.active{display:block}
+.frow{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--border)}
+.frow:last-child{border-bottom:none}
+.finit{width:34px;height:34px;border-radius:8px;background:rgba(0,229,160,.1);color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0}
+.fn{flex:1;font-size:14px;font-weight:600}
+.fo{font-size:11px;color:var(--accent);font-family:var(--mono)}
+.fof{font-size:11px;color:var(--muted);font-family:var(--mono)}
+.hrow{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)}
+.hrow:last-child{border-bottom:none}
+.hico{width:38px;height:38px;border-radius:10px;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.hn{font-size:14px;font-weight:600;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hm{font-size:11px;color:var(--muted);margin-top:2px;font-family:var(--mono)}
+.empty{text-align:center;padding:40px 20px;color:var(--muted);font-size:13px}
+.note{background:var(--surface2);border-radius:10px;padding:12px 14px;font-size:12px;color:var(--muted);margin-top:10px;line-height:1.6}
 </style>
 </head>
 <body>
-<div class="app">
 
-  <!-- HEADER -->
-  <div class="header">
-    <div class="logo">Roblox<span>Watch</span></div>
-    <div style="display:flex;gap:10px;align-items:center;">
-      <button class="refresh-btn" id="refreshBtn" onclick="refreshCurrent()" title="Odśwież">↻</button>
-      <div class="pulse-dot" id="liveDot" style="display:none"></div>
+<div class="hdr">
+  <div class="logo">Roblox<span>Watch</span></div>
+  <div style="display:flex;gap:10px;align-items:center">
+    <span id="refreshTime" style="font-size:11px;font-family:var(--mono);color:var(--muted)"></span>
+    <div class="live" id="liveDot"></div>
+  </div>
+</div>
+
+<div class="search">
+  <div class="slabel">Nazwa gracza w Roblox</div>
+  <div class="srow">
+    <input class="sinput" id="uIn" placeholder="np. CoolKid123" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" onkeydown="if(event.key==='Enter')go()">
+    <button class="sbtn" id="goBtn" onclick="go()">&#8594;</button>
+  </div>
+</div>
+
+<div class="chips" id="chipsEl"></div>
+<div class="msg" id="msgEl"></div>
+<div class="err" id="errEl"></div>
+
+<div class="prof" id="profEl">
+  <div class="pcard">
+    <div class="ptop">
+      <div id="aviWrap"></div>
+      <div>
+        <div class="pname" id="pName"></div>
+        <div class="psub" id="pSub"></div>
+        <div class="pbadge off" id="pBadge"><span class="dot"></span><span id="pBadgeTxt">Offline</span></div>
+      </div>
+    </div>
+    <div class="stats">
+      <div class="stat"><div class="sv" id="sFri">&#8212;</div><div class="sl">Znajomi</div></div>
+      <div class="stat"><div class="sv" id="sFol">&#8212;</div><div class="sl">Obs.</div></div>
+      <div class="stat"><div class="sv" id="sYr">&#8212;</div><div class="sl">Konto od</div></div>
     </div>
   </div>
 
-  <!-- HOME / SEARCH -->
-  <div id="homeView">
-    <div class="search-section">
-      <div class="search-label">Wpisz nazwę gracza</div>
-      <div class="search-row">
-        <input class="search-input" id="usernameInput" placeholder="np. CoolKid123" type="text"
-          autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false"
-          onkeydown="if(event.key==='Enter')searchUser()">
-        <button class="search-btn" id="searchBtn" onclick="searchUser()">→</button>
-      </div>
-    </div>
-
-    <div class="saved-section" id="savedSection" style="display:none">
-      <div class="search-label" style="margin-bottom:8px">Obserwowane</div>
-      <div class="saved-chips" id="savedChips"></div>
-    </div>
-
-    <div class="loading" id="loadingEl">
-      <div class="spinner"></div>
-      <div class="loading-text">Pobieranie danych z Roblox...</div>
-    </div>
-
-    <div class="error-box" id="errorEl"></div>
-
-    <!-- PROFILE -->
-    <div class="profile-section" id="profileSection">
-
-      <!-- Profile card -->
-      <div class="profile-card" id="profileCard">
-        <div class="profile-top">
-          <div class="avatar-wrap">
-            <img class="avatar" id="avatarImg" src="" alt="avatar">
-            <div class="avatar-status" id="avatarStatus"></div>
-          </div>
-          <div class="profile-info">
-            <div class="profile-name" id="profileName">—</div>
-            <div class="profile-sub" id="profileSub">@username</div>
-            <div class="status-badge offline" id="statusBadge">
-              <span class="dot"></span>
-              <span id="statusText">Offline</span>
-            </div>
-          </div>
-        </div>
-        <div class="stats-row">
-          <div class="stat-box">
-            <div class="stat-val" id="statFriends">—</div>
-            <div class="stat-lbl">Znajomi</div>
-          </div>
-          <div class="stat-box">
-            <div class="stat-val" id="statFollowers">—</div>
-            <div class="stat-lbl">Obserwujący</div>
-          </div>
-          <div class="stat-box">
-            <div class="stat-val" id="statJoined">—</div>
-            <div class="stat-lbl">Konto od</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Currently playing -->
-      <div class="current-game-card" id="currentGameCard">
-        <div class="cg-label">Teraz gra</div>
-        <div class="cg-name" id="cgName">—</div>
-        <div class="cg-meta" id="cgMeta">—</div>
-      </div>
-
-      <!-- AI Analysis -->
-      <div class="ai-card" id="aiCard">
-        <div class="ai-header">
-          <span style="font-size:16px">◈</span> Analiza AI
-          <span class="tag">Claude</span>
-        </div>
-        <div id="aiContent">
-          <div class="ai-loading">
-            <div class="ai-dot"></div>
-            <div class="ai-dot"></div>
-            <div class="ai-dot"></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Inner tabs -->
-      <div class="inner-tabs">
-        <button class="inner-tab active" onclick="switchInner('history', this)">Historia gier</button>
-        <button class="inner-tab" onclick="switchInner('friends', this)">Znajomi</button>
-      </div>
-
-      <div id="historyPanel" class="inner-panel active">
-        <div class="history-section active" id="historyList"></div>
-      </div>
-
-      <div id="friendsPanel" class="inner-panel">
-        <div class="friends-section active" id="friendsList"></div>
-      </div>
-
-    </div>
+  <div class="now" id="nowEl">
+    <div class="now-lbl">Teraz gra</div>
+    <div class="now-game" id="nowGame"></div>
+    <div class="now-meta" id="nowMeta"></div>
   </div>
 
+  <div class="ai" id="aiEl">
+    <div class="ai-lbl">&#9670; Analiza AI &#8212; raport rodzicielski</div>
+    <div id="aiContent"><div class="dots"><div class="d"></div><div class="d"></div><div class="d"></div></div></div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="sw('h',this)">Status / historia</button>
+    <button class="tab" onclick="sw('f',this)">Znajomi</button>
+  </div>
+  <div class="panel active" id="hPanel"></div>
+  <div class="panel" id="fPanel"></div>
 </div>
 
 <script>
-const PROXY = 'https://corsproxy.io/?url=';
-const ROBLOX = 'https://users.roblox.com';
-const state = {
-  userId: null,
-  username: null,
-  userData: null,
-  presenceData: null,
-  friends: [],
-  history: [],
-  saved: JSON.parse(localStorage.getItem('rw_saved') || '[]'),
-  currentData: null
-};
+// ─── PROXY SYSTEM ─────────────────────────────────────────────────────────────
+// Cztery proxy GET — próbuje kolejno aż jeden zadziała
+const GET_PROXIES = [
+  u => 'https://api.allorigins.win/raw?url=' + encodeURIComponent(u),
+  u => 'https://corsproxy.io/?url=' + encodeURIComponent(u),
+  u => 'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(u),
+  u => 'https://thingproxy.freeboard.io/fetch/' + u,
+];
 
-function $(id) { return document.getElementById(id); }
-
-function showLoading(v) {
-  $('loadingEl').classList.toggle('active', v);
-  $('errorEl').classList.remove('active');
-  $('profileSection').classList.toggle('active', false);
+async function rFetch(url) {
+  let lastErr;
+  for (const mk of GET_PROXIES) {
+    try {
+      const r = await fetch(mk(url), { signal: AbortSignal.timeout(7000) });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const txt = await r.text();
+      if (!txt || txt[0] === '<') throw new Error('HTML response (proxy error page)');
+      return JSON.parse(txt);
+    } catch(e) { lastErr = e; }
+  }
+  throw new Error('Brak połączenia z Roblox (' + (lastErr?.message||'') + ')');
 }
 
-function showError(msg) {
-  $('errorEl').textContent = msg;
-  $('errorEl').classList.add('active');
-  $('loadingEl').classList.remove('active');
+// POST proxy — username lookup
+const POST_PROXIES = [
+  u => 'https://corsproxy.io/?url=' + encodeURIComponent(u),
+  u => 'https://api.allorigins.win/raw?url=' + encodeURIComponent(u),
+];
+
+async function rPost(url, body) {
+  let lastErr;
+  for (const mk of POST_PROXIES) {
+    try {
+      const r = await fetch(mk(url), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-requested-with': 'XMLHttpRequest' },
+        body: JSON.stringify(body),
+        signal: AbortSignal.timeout(7000)
+      });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const txt = await r.text();
+      if (!txt || txt[0] === '<') throw new Error('HTML response');
+      return JSON.parse(txt);
+    } catch(e) { lastErr = e; }
+  }
+  throw new Error('POST failed: ' + (lastErr?.message||''));
 }
 
-async function robloxFetch(url) {
-  const r = await fetch(PROXY + encodeURIComponent(url));
-  if (!r.ok) throw new Error('HTTP ' + r.status);
-  return r.json();
+// ─── STATE ────────────────────────────────────────────────────────────────────
+var S = { uid: null, uname: null };
+var saved = [];
+try { saved = JSON.parse(localStorage.getItem('rw3') || '[]'); } catch(e){}
+
+function q(id) { return document.getElementById(id); }
+function showMsg(t) { q('msgEl').textContent = t; q('msgEl').style.display = 'block'; q('errEl').style.display = 'none'; }
+function showErr(t) { q('errEl').innerHTML = t; q('errEl').style.display = 'block'; q('msgEl').style.display = 'none'; }
+function hideMsg() { q('msgEl').style.display = 'none'; }
+
+function fmtN(n) {
+  if (n == null || n === '?') return '?';
+  if (n >= 1e6) return (Math.round(n/1e5)/10) + 'M';
+  if (n >= 1000) return (Math.round(n/100)/10) + 'K';
+  return '' + n;
+}
+function timeAgo(iso) {
+  if (!iso) return '';
+  var s = (Date.now() - new Date(iso)) / 1000;
+  if (s < 60) return 'przed chwila';
+  if (s < 3600) return Math.floor(s/60) + ' min temu';
+  if (s < 86400) return Math.floor(s/3600) + ' h temu';
+  return Math.floor(s/86400) + ' dni temu';
+}
+function fmtDT(iso) {
+  if (!iso) return '';
+  return new Date(iso).toLocaleString('pl-PL',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
 }
 
-async function searchUser() {
-  const input = $('usernameInput').value.trim();
-  if (!input) return;
-  $('searchBtn').disabled = true;
-  showLoading(true);
+// ─── SEARCH ───────────────────────────────────────────────────────────────────
+async function go() {
+  var name = q('uIn').value.trim();
+  if (!name) return;
+  q('goBtn').disabled = true;
+  showMsg('Szukam gracza "' + name + '"...');
+  q('profEl').style.display = 'none';
+  q('liveDot').style.display = 'none';
 
   try {
-    // Search by username
-    const searchRes = await robloxFetch(
-      `https://users.roblox.com/v1/usernames/users`,
-    ).catch(() => null);
+    var uid = null;
 
-    // Use POST workaround via proxy
-    const postData = JSON.stringify({ usernames: [input], excludeBannedUsers: false });
-    const r = await fetch(PROXY + encodeURIComponent('https://users.roblox.com/v1/usernames/users'), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: postData
-    });
-    const data = await r.json();
+    // Próba 1: POST username lookup
+    try {
+      var data = await rPost('https://users.roblox.com/v1/usernames/users', { usernames: [name], excludeBannedUsers: false });
+      if (data.data && data.data.length) { uid = data.data[0].id; S.uname = data.data[0].name; }
+    } catch(e1) {
+      // Próba 2: GET search
+      try {
+        var data2 = await rFetch('https://users.roblox.com/v1/users/search?keyword=' + encodeURIComponent(name) + '&limit=10');
+        if (data2.data && data2.data.length) {
+          var match = data2.data.find(function(u){ return u.name.toLowerCase() === name.toLowerCase(); }) || data2.data[0];
+          uid = match.id; S.uname = match.name;
+        }
+      } catch(e2) {}
+    }
 
-    if (!data.data || data.data.length === 0) {
-      showError('Nie znaleziono gracza o nazwie "' + input + '". Sprawdź pisownię.');
+    if (!uid) {
+      showErr('Nie znaleziono gracza <b>"' + name + '"</b>.<br>Sprawdz pisownie. Jesli blad sie powtarza, Roblox API moze byc chwilowo niedostepne — sprobuj za minute.');
       return;
     }
 
-    const user = data.data[0];
-    state.userId = user.id;
-    state.username = user.name;
-    await loadFullProfile();
-
+    S.uid = uid;
+    await loadProfile();
   } catch(e) {
-    showError('Błąd połączenia z Roblox. Spróbuj ponownie.');
-    console.error(e);
+    showErr('Blad polaczenia: ' + e.message);
   } finally {
-    $('searchBtn').disabled = false;
+    q('goBtn').disabled = false;
   }
 }
 
-async function loadFullProfile() {
-  showLoading(true);
-  $('liveDot').style.display = 'none';
+// ─── PROFILE ─────────────────────────────────────────────────────────────────
+async function loadProfile() {
+  showMsg('Pobieranie profilu...');
 
-  try {
-    const [userInfo, presence, friends] = await Promise.allSettled([
-      robloxFetch(`https://users.roblox.com/v1/users/${state.userId}`),
-      robloxFetch(`https://presence.roblox.com/v1/presence/users?userIds=${state.userId}`),
-      robloxFetch(`https://friends.roblox.com/v1/users/${state.userId}/friends?userSort=StatusAlphabetical`)
-    ]);
+  var results = await Promise.allSettled([
+    rFetch('https://users.roblox.com/v1/users/' + S.uid),
+    rFetch('https://presence.roblox.com/v1/presence/users?userIds=' + S.uid),
+    rFetch('https://friends.roblox.com/v1/users/' + S.uid + '/friends?userSort=StatusAlphabetical'),
+    rFetch('https://friends.roblox.com/v1/users/' + S.uid + '/followers/count'),
+  ]);
 
-    const user = userInfo.status === 'fulfilled' ? userInfo.value : {};
-    const presArr = presence.status === 'fulfilled' ? presence.value.userPresences : [];
-    const pres = presArr[0] || {};
-    const friendsData = friends.status === 'fulfilled' ? friends.value.data : [];
+  var user    = results[0].status === 'fulfilled' ? results[0].value : {};
+  var pres    = results[1].status === 'fulfilled' ? ((results[1].value.userPresences||[])[0]||{}) : {};
+  var friends = results[2].status === 'fulfilled' ? (results[2].value.data||[]) : [];
+  var folCnt  = results[3].status === 'fulfilled' ? results[3].value.count : null;
 
-    state.userData = user;
-    state.presenceData = pres;
-    state.friends = friendsData;
-    state.currentData = { user, pres, friends: friendsData };
+  hideMsg();
 
-    // Avatar
-    loadAvatar(state.userId);
+  // Avatar — inicjaly fallback, potem laduje obrazek
+  var aw = q('aviWrap');
+  var init = ((user.displayName||user.name||'?').substring(0,2)).toUpperCase();
+  aw.innerHTML = '<div class="avi-init">' + init + '</div>';
+  rFetch('https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=' + S.uid + '&size=150x150&format=Png&isCircular=false')
+    .then(function(r) { if (r.data && r.data[0] && r.data[0].imageUrl) aw.innerHTML = '<img class="avi" src="' + r.data[0].imageUrl + '">'; })
+    .catch(function(){});
 
-    // Name
-    $('profileName').textContent = user.displayName || user.name || state.username;
-    $('profileSub').textContent = '@' + (user.name || state.username);
+  q('pName').textContent = user.displayName || user.name || S.uname || '?';
+  q('pSub').textContent  = '@' + (user.name || S.uname || '?');
+  q('sFri').textContent  = fmtN(friends.length);
+  q('sFol').textContent  = fmtN(folCnt);
+  q('sYr').textContent   = user.created ? new Date(user.created).getFullYear() : '?';
 
-    // Status
-    const isOnline = pres.userPresenceType > 0;
-    const isInGame = pres.userPresenceType === 2;
-    $('avatarStatus').className = 'avatar-status' + (isOnline ? ' online' : '');
-    $('statusBadge').className = 'status-badge ' + (isOnline ? 'online' : 'offline');
+  var pt = pres.userPresenceType || 0;
+  var inGame = pt === 2, online = pt > 0;
+  var badge = q('pBadge');
+  badge.className = 'pbadge ' + (online ? 'on' : 'off');
+  q('pBadgeTxt').textContent = inGame ? 'Teraz gra' : online ? 'Online' : 'Offline';
+  q('liveDot').style.display = online ? 'block' : 'none';
 
-    if (isInGame) {
-      $('statusText').textContent = 'Teraz gra';
-      $('liveDot').style.display = 'block';
-    } else if (isOnline) {
-      $('statusText').textContent = 'Online';
-      $('liveDot').style.display = 'block';
-    } else {
-      $('statusText').textContent = 'Offline';
-    }
-
-    // Current game
-    if (isInGame && pres.lastLocation) {
-      $('currentGameCard').classList.add('active');
-      $('cgName').textContent = pres.lastLocation;
-      const since = pres.lastOnline ? 'od ' + formatTime(pres.lastOnline) : '';
-      $('cgMeta').textContent = since ? `Gra ${since}` : 'Aktywna sesja';
-    } else {
-      $('currentGameCard').classList.remove('active');
-    }
-
-    // Followers/stats
-    loadStats(state.userId, user);
-
-    // Friends list
-    renderFriends(friendsData);
-
-    // Game history (simulated from presence + enriched)
-    renderHistory(pres, user);
-
-    // Show profile
-    $('loadingEl').classList.remove('active');
-    $('profileSection').classList.add('active');
-
-    // Save to observed
-    saveUser();
-
-    // AI analysis
-    runAIAnalysis(user, pres, friendsData);
-
-  } catch(e) {
-    showError('Błąd ładowania profilu. Upewnij się, że profil jest publiczny.');
-    console.error(e);
+  var nowEl = q('nowEl');
+  if (inGame && pres.lastLocation) {
+    nowEl.style.display = 'block';
+    q('nowGame').textContent = pres.lastLocation;
+    q('nowMeta').textContent = pres.lastOnline ? 'Gra od ' + timeAgo(pres.lastOnline) : 'Aktywna sesja';
+  } else {
+    nowEl.style.display = 'none';
   }
+
+  renderHistory(pres);
+  renderFriends(friends);
+
+  q('refreshTime').textContent = new Date().toLocaleTimeString('pl-PL',{hour:'2-digit',minute:'2-digit'});
+  q('profEl').style.display = 'block';
+
+  // Zapisz w historii
+  if (!saved.find(function(s){ return s.id === S.uid; })) {
+    saved.unshift({ id: S.uid, name: S.uname || user.name });
+    if (saved.length > 8) saved = saved.slice(0, 8);
+    try { localStorage.setItem('rw3', JSON.stringify(saved)); } catch(e){}
+  }
+  renderChips();
+  runAI(user, pres, friends);
 }
 
-async function loadAvatar(userId) {
-  try {
-    const res = await robloxFetch(
-      `https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${userId}&size=150x150&format=Png&isCircular=false`
-    );
-    if (res.data && res.data[0]) {
-      $('avatarImg').src = res.data[0].imageUrl;
-    }
-  } catch(e) {}
+function renderHistory(pres) {
+  var el = q('hPanel');
+  var pt = pres.userPresenceType || 0;
+  var items = [];
+  if (pt === 2 && pres.lastLocation)
+    items.push({ ico: '&#x1F7E2;', name: pres.lastLocation, meta: 'Teraz &bull; aktywna sesja' });
+  if (pres.lastOnline && pt !== 2)
+    items.push({ ico: '&#127918;', name: pres.lastLocation || 'Roblox', meta: 'Ostatnio: ' + timeAgo(pres.lastOnline) + ' &middot; ' + fmtDT(pres.lastOnline) });
+  if (!items.length)
+    items.push({ ico: '&#128164;', name: 'Brak aktywnosci', meta: 'Gracz jest offline' });
+
+  el.innerHTML = items.map(function(i){
+    return '<div class="hrow"><div class="hico">' + i.ico + '</div><div><div class="hn">' + i.name + '</div><div class="hm">' + i.meta + '</div></div></div>';
+  }).join('') + '<div class="note">&#8505; Roblox nie udostepnia pelnej historii gier przez publiczne API. Widoczna jest tylko biez&aacute;ca lub ostatnia sesja. Peln&aacute; historia jest dostepna w oficjalnym panelu <b>Roblox Family</b>.</div>';
 }
 
-async function loadStats(userId, user) {
-  try {
-    const [followers, following] = await Promise.allSettled([
-      robloxFetch(`https://friends.roblox.com/v1/users/${userId}/followers/count`),
-      robloxFetch(`https://friends.roblox.com/v1/users/${userId}/followings/count`)
-    ]);
-
-    const fCount = followers.status === 'fulfilled' ? followers.value.count : '?';
-    $('statFollowers').textContent = formatNum(fCount);
-
-    const friendsCount = state.friends.length;
-    $('statFriends').textContent = formatNum(friendsCount);
-
-    if (user.created) {
-      const d = new Date(user.created);
-      $('statJoined').textContent = d.getFullYear();
-    }
-  } catch(e) {}
-}
-
-function renderFriends(friendsData) {
-  const el = $('friendsList');
-  if (!friendsData || friendsData.length === 0) {
-    el.innerHTML = '<div class="empty"><div class="empty-icon">👥</div><div class="empty-title">Brak znajomych</div><div class="empty-sub">Profil jest prywatny lub gracz nie ma znajomych.</div></div>';
+function renderFriends(friends) {
+  var el = q('fPanel');
+  if (!friends.length) {
+    el.innerHTML = '<div class="empty">Brak znajomych lub profil jest prywatny.</div>';
     return;
   }
+  var s = friends.slice().sort(function(a,b){ return (b.isOnline?1:0)-(a.isOnline?1:0); });
+  el.innerHTML = s.slice(0,30).map(function(f){
+    var init = ((f.displayName||f.name||'?').substring(0,2)).toUpperCase();
+    return '<div class="frow"><div class="finit">' + init + '</div><div class="fn">' + (f.displayName||f.name) + '<br><span style="font-size:11px;color:var(--muted);font-family:var(--mono)">@' + f.name + '</span></div><div class="' + (f.isOnline?'fo':'fof') + '">' + (f.isOnline?'&#9679; online':'offline') + '</div></div>';
+  }).join('');
+  if (friends.length > 30) el.innerHTML += '<div class="empty">...i ' + (friends.length-30) + ' wiecej</div>';
+}
 
-  const sorted = [...friendsData].sort((a, b) => {
-    const ao = a.isOnline ? 1 : 0;
-    const bo = b.isOnline ? 1 : 0;
-    return bo - ao;
-  });
+async function runAI(user, pres, friends) {
+  q('aiEl').style.display = 'block';
+  var pt = pres.userPresenceType || 0;
+  var prompt = 'Jestes asystentem kontroli rodzicielskiej Roblox. Napisz po polsku ZWIEZLY raport (4-5 zdan) dla rodzica. Pisz naturalnie, bez punktow.\n\nNick: ' + (user.displayName||user.name) + '\nKonto od: ' + (user.created ? new Date(user.created).getFullYear() : '?') + '\nStatus: ' + (pt===2 ? 'Gra teraz w: '+pres.lastLocation : pt>0 ? 'Online' : 'Offline') + '\nOstatnia aktywnosc: ' + (pres.lastOnline ? timeAgo(pres.lastOnline) : 'nieznana') + '\nLiczba znajomych: ' + friends.length + '\nZnajomi online: ' + friends.filter(function(f){return f.isOnline;}).length + '\n\nNapisz raport rodzicielski - na co zwrocic uwage.';
+  try {
+    var r = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1000, messages: [{ role: 'user', content: prompt }] })
+    });
+    var d = await r.json();
+    var txt = (d.content && d.content[0] && d.content[0].text) || 'Brak analizy.';
+    q('aiContent').innerHTML = '<div class="ai-txt">' + txt.replace(/\n/g,'<br>') + '</div>';
+  } catch(e) {
+    q('aiContent').innerHTML = '<div class="ai-txt" style="color:var(--muted)">Analiza AI niedostepna.</div>';
+  }
+}
 
-  el.innerHTML = sorted.slice(0, 20).map(f => {
-    const initials = (f.displayName || f.name || '?').substring(0, 2).toUpperCase();
-    const colors = ['#00e5a0','#7c6fff','#ff6b6b','#ffd166','#06d6a0'];
-    const col = colors[(f.id || 0) % colors.length];
-    return `
-      <div class="friend-row">
-        <div class="friend-avatar" style="color:${col};background:${col}20">${initials}</div>
-        <div style="flex:1;min-width:0">
-          <div class="friend-name">${f.displayName || f.name}</div>
-          <div class="friend-status">${f.name !== f.displayName ? '@' + f.name : ''}</div>
-        </div>
-        <div class="friend-status ${f.isOnline ? 'friend-online' : ''}">${f.isOnline ? '● online' : 'offline'}</div>
-      </div>`;
+function sw(p, el) {
+  document.querySelectorAll('.tab').forEach(function(t){ t.classList.remove('active'); });
+  document.querySelectorAll('.panel').forEach(function(x){ x.classList.remove('active'); });
+  el.classList.add('active');
+  q(p + 'Panel').classList.add('active');
+}
+
+function renderChips() {
+  q('chipsEl').innerHTML = saved.map(function(s){
+    return '<div class="chip" onclick="loadSaved(' + s.id + ',\'' + s.name + '\')">@' + s.name + '</div>';
   }).join('');
 }
 
-function renderHistory(pres, user) {
-  const el = $('historyList');
-  const games = generateHistoryFromData(pres, user);
-
-  if (games.length === 0) {
-    el.innerHTML = '<div class="empty"><div class="empty-icon">🎮</div><div class="empty-title">Brak historii</div><div class="empty-sub">Historia gier jest niedostępna dla tego profilu. Roblox API nie udostępnia pełnej historii — widać tylko aktualną sesję.</div></div>';
-    return;
-  }
-
-  el.innerHTML = games.map((g, i) => `
-    <div class="history-item" style="animation-delay:${i * 0.05}s">
-      <div class="history-icon">${g.icon}</div>
-      <div class="history-info">
-        <div class="history-name">${g.name}</div>
-        <div class="history-meta">${g.when}</div>
-      </div>
-      <div class="history-dur">${g.dur}</div>
-    </div>`).join('');
+function loadSaved(id, name) {
+  S.uid = id; S.uname = name;
+  q('uIn').value = name;
+  q('profEl').style.display = 'none';
+  loadProfile();
 }
 
-function generateHistoryFromData(pres, user) {
-  const games = [];
-  if (pres.userPresenceType === 2 && pres.lastLocation) {
-    games.push({
-      name: pres.lastLocation,
-      when: 'Teraz • aktywna sesja',
-      dur: 'live',
-      icon: '🟢'
-    });
-  }
-  if (pres.lastOnline && pres.userPresenceType !== 2) {
-    const last = new Date(pres.lastOnline);
-    games.push({
-      name: pres.lastLocation || 'Ostatnia sesja',
-      when: 'Ostatnio widziany: ' + formatDateTime(last),
-      dur: '—',
-      icon: '🎮'
-    });
-  }
-  return games;
-}
-
-async function runAIAnalysis(user, pres, friends) {
-  $('aiCard').classList.add('active');
-
-  const isOnline = pres.userPresenceType > 0;
-  const isInGame = pres.userPresenceType === 2;
-  const onlineFriends = friends.filter(f => f.isOnline).length;
-  const joinYear = user.created ? new Date(user.created).getFullYear() : '?';
-  const lastSeen = pres.lastOnline ? formatDateTime(new Date(pres.lastOnline)) : 'nieznane';
-
-  const prompt = `Jesteś asystentem kontroli rodzicielskiej dla Roblox. Przeanalizuj poniższe dane o graczu i napisz po polsku KRÓTKI (3-5 zdań) raport dla rodzica. Bądź konkretny, pomocny i rzeczowy. Nie używaj bulletpointów — pisz naturalnie.
-
-Dane gracza:
-- Nazwa: ${user.displayName || user.name}
-- Konto założone: ${joinYear}
-- Status: ${isInGame ? 'Teraz gra w: ' + pres.lastLocation : isOnline ? 'Online' : 'Offline'}
-- Ostatnio widziany: ${lastSeen}
-- Liczba znajomych: ${friends.length}
-- Znajomych online teraz: ${onlineFriends}
-- Opis konta: ${user.description ? user.description.substring(0, 100) : 'brak'}
-
-Napisz raport rodzicielski — co warto wiedzieć, na co zwrócić uwagę.`;
-
-  try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
-        messages: [{ role: 'user', content: prompt }]
-      })
-    });
-    const data = await res.json();
-    const text = data.content?.[0]?.text || 'Brak analizy.';
-    $('aiContent').innerHTML = `<div class="ai-text">${text.replace(/\n/g, '<br>')}</div>`;
-  } catch(e) {
-    $('aiContent').innerHTML = `<div class="ai-text" style="color:var(--muted)">Analiza AI niedostępna.</div>`;
-  }
-}
-
-function saveUser() {
-  const existing = state.saved.find(s => s.id === state.userId);
-  if (!existing) {
-    state.saved.push({ id: state.userId, name: state.username });
-    if (state.saved.length > 8) state.saved.shift();
-    localStorage.setItem('rw_saved', JSON.stringify(state.saved));
-  }
-  renderSaved();
-}
-
-function renderSaved() {
-  const saved = state.saved;
-  if (saved.length === 0) { $('savedSection').style.display = 'none'; return; }
-  $('savedSection').style.display = 'block';
-  $('savedChips').innerHTML = saved.map(s =>
-    `<div class="chip" onclick="loadById(${s.id},'${s.name}')">
-      <span class="dot"></span>${s.name}
-    </div>`
-  ).join('');
-}
-
-async function loadById(id, name) {
-  state.userId = id;
-  state.username = name;
-  $('usernameInput').value = name;
-  await loadFullProfile();
-}
-
-async function refreshCurrent() {
-  if (!state.userId) return;
-  await loadFullProfile();
-}
-
-function switchInner(panel, el) {
-  document.querySelectorAll('.inner-tab').forEach(t => t.classList.remove('active'));
-  document.querySelectorAll('.inner-panel').forEach(p => p.classList.remove('active'));
-  el.classList.add('active');
-  $(panel + 'Panel').classList.add('active');
-}
-
-function formatNum(n) {
-  if (n === '?' || n === undefined || n === null) return '?';
-  if (n >= 1000000) return (n/1000000).toFixed(1) + 'M';
-  if (n >= 1000) return (n/1000).toFixed(1) + 'K';
-  return String(n);
-}
-
-function formatTime(iso) {
-  if (!iso) return '';
-  const d = new Date(iso);
-  const now = new Date();
-  const diff = now - d;
-  const mins = Math.floor(diff / 60000);
-  if (mins < 1) return 'przed chwilą';
-  if (mins < 60) return `${mins} min temu`;
-  const h = Math.floor(mins / 60);
-  if (h < 24) return `${h}h temu`;
-  return formatDateTime(d);
-}
-
-function formatDateTime(d) {
-  return d.toLocaleString('pl-PL', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
-}
-
-// Init
-renderSaved();
+renderChips();
 </script>
 </body>
 </html>
