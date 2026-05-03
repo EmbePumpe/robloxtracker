@@ -361,9 +361,7 @@ async function loadProfile() {
   var calls = [
     rFetch('https://users.roblox.com/v1/users/' + S.uid),
     rPost('https://presence.roblox.com/v1/presence/users', { userIds: [S.uid] }),
-    rFetch(cookie 
-      ? 'https://friends.roblox.com/v1/my/friends?userSort=StatusAlphabetical'
-      : 'https://friends.roblox.com/v1/users/' + S.uid + '/friends?userSort=StatusAlphabetical'),
+    rFetch('https://friends.roblox.com/v1/users/' + S.uid + '/friends?userSort=StatusAlphabetical'),
     rFetch('https://friends.roblox.com/v1/users/' + S.uid + '/followers/count'),
   ];
 
