@@ -361,7 +361,7 @@ async function loadProfile() {
   var calls = [
     rFetch('https://users.roblox.com/v1/users/' + S.uid),
     rPost('https://presence.roblox.com/v1/presence/users', { userIds: [S.uid] }),
-    rFetch('https://friends.roblox.com/v1/users/' + S.uid + '/friends?userSort=StatusAlphabetical'),
+    rFetch(cookie ? 'https://friends.roblox.com/v1/my/friends?userSort=StatusAlphabetical&limit=200' : 'https://friends.roblox.com/v1/users/' + S.uid + '/friends?userSort=StatusAlphabetical&limit=200'),
     rFetch('https://friends.roblox.com/v1/users/' + S.uid + '/followers/count'),
   ];
 
@@ -369,15 +369,25 @@ async function loadProfile() {
   var user    = results[0].status === 'fulfilled' ? results[0].value : {};
   var presRaw = results[1].status === 'fulfilled' ? results[1].value : null;
   var friendsRaw = results[2].status === 'fulfilled' ? results[2].value : null;
-  console.log('FRIENDS RAW:', JSON.stringify(friendsRaw));
-  console.log('FRIENDS STATUS:', results[2].status, results[2].reason ? String(results[2].reason) : 'ok');
-  // Roblox /v1/users/{id}/friends zwraca {data:[...]} lub {errors:[...]}
+  // Roblox zwraca {data:[...]} lub {errors:[...]}
   var friends = [];
   if (friendsRaw) {
-    if (friendsRaw.data && friendsRaw.data.length) friends = friendsRaw.data;
-    else if (Array.isArray(friendsRaw)) friends = friendsRaw;
+    if (friendsRaw.data && friendsRaw.data.length) {
+      friends = friendsRaw.data;
+      // Zapisz do cache
+      try { localStorage.setItem('rw_friends_' + S.uid, JSON.stringify(friends)); } catch(e){}
+    } else if (Array.isArray(friendsRaw) && friendsRaw.length) {
+      friends = friendsRaw;
+      try { localStorage.setItem('rw_friends_' + S.uid, JSON.stringify(friends)); } catch(e){}
+    }
   }
-  console.log('FRIENDS COUNT:', friends.length);
+  // Jeśli pusto - spróbuj cache
+  if (!friends.length) {
+    try {
+      var cached = localStorage.getItem('rw_friends_' + S.uid);
+      if (cached) { friends = JSON.parse(cached); }
+    } catch(e){}
+  }
   var folCnt  = results[3].status === 'fulfilled' ? results[3].value.count : null;
 
   // Parse presence
@@ -506,31 +516,79 @@ function renderHistory(pres, user) {
 function renderFriends(friends) {
   var el = q('fPanel');
   if (!friends.length) {
-    el.innerHTML = '<div class="empty">Brak znajomych lub profil jest prywatny.<br><br>' +
-      (cookie ? '' : '<small>Zaloguj się przez cookie żeby zobaczyć pełną listę.</small>') + '</div>';
+    el.innerHTML = '<div class="empty">Brak znajomych lub profil jest prywatny.</div>';
     return;
   }
-  // /v1/my/friends zwraca: id, name, displayName, isOnline, presenceType, userPresenceType, lastLocation
+
+  // Jeśli nazwy są puste - pobierz je przez batch API
+  var needNames = friends.length > 0 && !friends[0].name && !friends[0].displayName;
+  if (needNames) {
+    el.innerHTML = '<div class="empty" style="padding:20px">Ładowanie nazw znajomych...</div>';
+    var ids = friends.map(function(f){ return f.id; });
+    // Pobierz nazwy partiami po 100
+    var batches = [];
+    for (var i = 0; i < ids.length; i += 100) batches.push(ids.slice(i, i+100));
+    
+    Promise.all(batches.map(function(batch) {
+      return rFetch('https://users.roblox.com/v1/users?userIds=' + batch.join(',') + '&excludeBannedUsers=false')
+        .catch(function(){ return {data:[]}; });
+    })).then(function(results) {
+      var nameMap = {};
+      results.forEach(function(r) {
+        (r.data || r || []).forEach(function(u) {
+          nameMap[u.id] = { name: u.name, displayName: u.displayName };
+        });
+      });
+      // Połącz dane
+      var enriched = friends.map(function(f) {
+        var info = nameMap[f.id] || {};
+        return Object.assign({}, f, { name: info.name || f.name || '?', displayName: info.displayName || f.displayName || info.name || '?' });
+      });
+      // Zapisz do cache z nazwami
+      try { localStorage.setItem('rw_friends_' + S.uid, JSON.stringify(enriched)); } catch(e){}
+      doRenderFriends(enriched);
+    }).catch(function(e) {
+      doRenderFriends(friends);
+    });
+    return;
+  }
+  doRenderFriends(friends);
+}
+
+function doRenderFriends(friends) {
+  var el = q('fPanel');
   var sorted = friends.slice().sort(function(a,b){
-    var ao = a.isOnline || a.presenceType > 0 ? 1 : 0;
-    var bo = b.isOnline || b.presenceType > 0 ? 1 : 0;
+    var ao = (a.isOnline || a.presenceType > 0 || a.userPresenceType > 0) ? 1 : 0;
+    var bo = (b.isOnline || b.presenceType > 0 || b.userPresenceType > 0) ? 1 : 0;
     return bo - ao;
   });
-  el.innerHTML = sorted.slice(0,50).map(function(f){
-    var name = f.displayName || f.name || f.username || '';
-    var uname = f.name || f.username || '';
-    var init = (name || '?').substring(0,2).toUpperCase();
-    var online = f.isOnline || (f.presenceType > 0) || (f.userPresenceType > 0);
+  var onlineCount = sorted.filter(function(f){ return f.isOnline || f.presenceType > 0 || f.userPresenceType > 0; }).length;
+  
+  var html = '';
+  if (onlineCount > 0) {
+    html += '<div style="font-size:11px;color:var(--accent);font-family:var(--mono);padding:8px 0 4px;font-weight:600">● ' + onlineCount + ' online teraz</div>';
+  }
+  
+  html += sorted.slice(0, 100).map(function(f){
+    var name = f.displayName || f.name || '?';
+    var uname = f.name || '';
+    var init = name.substring(0,2).toUpperCase();
+    var online = f.isOnline || f.presenceType > 0 || f.userPresenceType > 0;
     var inGame = f.presenceType === 2 || f.userPresenceType === 2;
-    var loc = f.lastLocation || f.gameTitle || '';
+    var loc = f.lastLocation || '';
     var game = inGame && loc ? '<div class="fgame">▶ ' + escHtml(loc) + '</div>' : '';
     return '<div class="frow">' +
       '<div class="finit">' + escHtml(init) + '</div>' +
-      '<div class="fn">' + escHtml(name) + (uname && uname !== name ? '<div class="fn-sub">@' + escHtml(uname) + '</div>' : '') + game + '</div>' +
-      '<div class="' + (online?'fo':'fof') + '">' + (inGame ? '▶ gra' : online ? '● online' : 'offline') + '</div>' +
+      '<div class="fn">' + escHtml(name) +
+        (uname && uname !== name ? '<div class="fn-sub">@' + escHtml(uname) + '</div>' : '') +
+        game + '</div>' +
+      '<div class="' + (inGame ? 'fo' : online ? 'fo' : 'fof') + '">' +
+        (inGame ? '▶ gra' : online ? '● online' : 'offline') + '</div>' +
       '</div>';
   }).join('');
-  if (friends.length > 50) el.innerHTML += '<div class="empty">...i ' + (friends.length-50) + ' więcej</div>';
+  
+  if (friends.length > 100) html += '<div class="empty" style="padding:12px">...i ' + (friends.length-100) + ' więcej</div>';
+  el.innerHTML = html;
 }
 
 // ─── AI ANALYSIS ─────────────────────────────────────────────────────────────
