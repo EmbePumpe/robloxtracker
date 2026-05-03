@@ -129,51 +129,61 @@ body{background:var(--bg);color:var(--text);font-family:var(--display);min-heigh
 
 <script>
 // ─── PROXY SYSTEM ─────────────────────────────────────────────────────────────
-// Cztery proxy GET — próbuje kolejno aż jeden zadziała
+// roproxy.com = Roblox-dedykowane CORS proxy (zamienia subdomenę, np. users.roblox.com → users.roproxy.com)
+// Fallback: ogólne proxy GET
+
+function toRoproxy(url) {
+  // https://users.roblox.com/... → https://users.roproxy.com/...
+  return url.replace('roblox.com', 'roproxy.com');
+}
+
 const GET_PROXIES = [
-  u => 'https://api.allorigins.win/raw?url=' + encodeURIComponent(u),
+  u => toRoproxy(u),                                                             // roproxy - Roblox dedykowane, najlepsze
   u => 'https://corsproxy.io/?url=' + encodeURIComponent(u),
+  u => 'https://api.allorigins.win/raw?url=' + encodeURIComponent(u),
   u => 'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(u),
-  u => 'https://thingproxy.freeboard.io/fetch/' + u,
 ];
 
 async function rFetch(url) {
-  let lastErr;
-  for (const mk of GET_PROXIES) {
+  var lastErr;
+  for (var i = 0; i < GET_PROXIES.length; i++) {
     try {
-      const r = await fetch(mk(url), { signal: AbortSignal.timeout(7000) });
+      var proxyUrl = GET_PROXIES[i](url);
+      var r = await fetch(proxyUrl, { signal: AbortSignal.timeout(8000) });
       if (!r.ok) throw new Error('HTTP ' + r.status);
-      const txt = await r.text();
-      if (!txt || txt[0] === '<') throw new Error('HTML response (proxy error page)');
+      var txt = await r.text();
+      if (!txt || txt[0] === '<' || txt.indexOf('not in allowlist') > -1) throw new Error('Proxy error page');
       return JSON.parse(txt);
     } catch(e) { lastErr = e; }
   }
-  throw new Error('Brak połączenia z Roblox (' + (lastErr?.message||'') + ')');
+  throw new Error('Brak połączenia z Roblox (' + (lastErr ? lastErr.message : '') + ')');
 }
 
-// POST proxy — username lookup
+// POST proxy — presence.roblox.com i username lookup wymagają POST
+// roproxy obsługuje też POST!
 const POST_PROXIES = [
+  u => toRoproxy(u),                                                             // roproxy primary
   u => 'https://corsproxy.io/?url=' + encodeURIComponent(u),
   u => 'https://api.allorigins.win/raw?url=' + encodeURIComponent(u),
 ];
 
 async function rPost(url, body) {
-  let lastErr;
-  for (const mk of POST_PROXIES) {
+  var lastErr;
+  for (var i = 0; i < POST_PROXIES.length; i++) {
     try {
-      const r = await fetch(mk(url), {
+      var r = await fetch(POST_PROXIES[i](url), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-requested-with': 'XMLHttpRequest' },
         body: JSON.stringify(body),
-        signal: AbortSignal.timeout(7000)
+        signal: AbortSignal.timeout(8000)
       });
       if (!r.ok) throw new Error('HTTP ' + r.status);
-      const txt = await r.text();
-      if (!txt || txt[0] === '<') throw new Error('HTML response');
+      var txt = await r.text();
+      if (!txt || txt[0] === '<' || txt.indexOf('not in allowlist') > -1) throw new Error('Proxy error page');
       return JSON.parse(txt);
     } catch(e) { lastErr = e; }
   }
-  throw new Error('POST failed: ' + (lastErr?.message||''));
+  throw new Error('POST failed: ' + (lastErr ? lastErr.message : ''));
 }
 
 // ─── STATE ────────────────────────────────────────────────────────────────────
@@ -252,7 +262,7 @@ async function loadProfile() {
 
   var results = await Promise.allSettled([
     rFetch('https://users.roblox.com/v1/users/' + S.uid),
-    rFetch('https://presence.roblox.com/v1/presence/users?userIds=' + S.uid),
+    rPost('https://presence.roblox.com/v1/presence/users', { userIds: [S.uid] }),  // presence wymaga POST!
     rFetch('https://friends.roblox.com/v1/users/' + S.uid + '/friends?userSort=StatusAlphabetical'),
     rFetch('https://friends.roblox.com/v1/users/' + S.uid + '/followers/count'),
   ]);
@@ -340,22 +350,46 @@ function renderFriends(friends) {
   if (friends.length > 30) el.innerHTML += '<div class="empty">...i ' + (friends.length-30) + ' wiecej</div>';
 }
 
-async function runAI(user, pres, friends) {
+function runAI(user, pres, friends) {
   q('aiEl').style.display = 'block';
   var pt = pres.userPresenceType || 0;
-  var prompt = 'Jestes asystentem kontroli rodzicielskiej Roblox. Napisz po polsku ZWIEZLY raport (4-5 zdan) dla rodzica. Pisz naturalnie, bez punktow.\n\nNick: ' + (user.displayName||user.name) + '\nKonto od: ' + (user.created ? new Date(user.created).getFullYear() : '?') + '\nStatus: ' + (pt===2 ? 'Gra teraz w: '+pres.lastLocation : pt>0 ? 'Online' : 'Offline') + '\nOstatnia aktywnosc: ' + (pres.lastOnline ? timeAgo(pres.lastOnline) : 'nieznana') + '\nLiczba znajomych: ' + friends.length + '\nZnajomi online: ' + friends.filter(function(f){return f.isOnline;}).length + '\n\nNapisz raport rodzicielski - na co zwrocic uwage.';
-  try {
-    var r = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1000, messages: [{ role: 'user', content: prompt }] })
-    });
-    var d = await r.json();
-    var txt = (d.content && d.content[0] && d.content[0].text) || 'Brak analizy.';
-    q('aiContent').innerHTML = '<div class="ai-txt">' + txt.replace(/\n/g,'<br>') + '</div>';
-  } catch(e) {
-    q('aiContent').innerHTML = '<div class="ai-txt" style="color:var(--muted)">Analiza AI niedostepna.</div>';
+  var inGame = pt === 2, online = pt > 0;
+  var onlineFriends = friends.filter(function(f){ return f.isOnline; }).length;
+  var accountAge = user.created ? Math.floor((Date.now() - new Date(user.created)) / (86400*365*1000)) : null;
+  var lines = [];
+
+  // Status teraz
+  if (inGame && pres.lastLocation) {
+    lines.push('Gracz jest teraz aktywny i gra w <b>' + pres.lastLocation + '</b>.');
+  } else if (online) {
+    lines.push('Gracz jest teraz zalogowany w Roblox, ale nie jest w żadnej grze.');
+  } else {
+    var lastSeen = pres.lastOnline ? ' (ostatnio widziany: ' + timeAgo(pres.lastOnline) + ')' : '';
+    lines.push('Gracz jest obecnie offline' + lastSeen + '.');
   }
+
+  // Konto
+  if (accountAge !== null) {
+    if (accountAge < 1) lines.push('Konto jest bardzo nowe — założone w tym roku. Warto sprawdzić czy dziecko nie zakłada nowych kont.');
+    else if (accountAge < 2) lines.push('Konto ma około roku — relatywnie nowe.');
+    else lines.push('Konto istnieje od ' + new Date(user.created).getFullYear() + ' (' + accountAge + ' ' + (accountAge===1?'rok':accountAge<5?'lata':'lat') + ') — jest już ugruntowane.');
+  }
+
+  // Znajomi
+  if (friends.length === 0) {
+    lines.push('Gracz nie ma znajomych na liście lub profil jest ustawiony jako prywatny — brak ryzyka związanego z kontaktami.');
+  } else if (friends.length <= 10) {
+    lines.push('Lista znajomych jest mała (' + friends.length + ' osób' + (onlineFriends > 0 ? ', z czego ' + onlineFriends + ' jest teraz online' : '') + ') — to dobry znak.');
+  } else if (friends.length <= 50) {
+    lines.push('Gracz ma ' + friends.length + ' znajomych' + (onlineFriends > 0 ? ', w tym ' + onlineFriends + ' online teraz' : '') + ' — typowa liczba dla aktywnego gracza.');
+  } else {
+    lines.push('Gracz ma dużą liczbę znajomych (' + friends.length + '). Warto sprawdzić czy dziecko zna te osoby w realnym życiu.');
+  }
+
+  // Rekomendacja
+  lines.push('Pamiętaj, że Roblox Family pozwala ustawić limity czasu gry i blokadę czatu — warto to skonfigurować jeśli jeszcze tego nie zrobiłeś.');
+
+  q('aiContent').innerHTML = '<div class="ai-txt">' + lines.join(' ') + '</div>';
 }
 
 function sw(p, el) {
