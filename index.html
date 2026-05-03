@@ -361,7 +361,9 @@ async function loadProfile() {
   var calls = [
     rFetch('https://users.roblox.com/v1/users/' + S.uid),
     rPost('https://presence.roblox.com/v1/presence/users', { userIds: [S.uid] }),
-    rFetch('https://friends.roblox.com/v1/users/' + S.uid + '/friends?userSort=StatusAlphabetical'),
+    rFetch(cookie 
+      ? 'https://friends.roblox.com/v1/my/friends?userSort=StatusAlphabetical'
+      : 'https://friends.roblox.com/v1/users/' + S.uid + '/friends?userSort=StatusAlphabetical'),
     rFetch('https://friends.roblox.com/v1/users/' + S.uid + '/followers/count'),
   ];
 
@@ -438,20 +440,24 @@ async function loadChats() {
   try {
     // Pobierz konwersacje
     var convRes = await rFetch('https://chat.roblox.com/v2/get-user-conversations?pageNumber=1&pageSize=20');
-    if (!convRes || !convRes.length) {
-      q('cPanel').innerHTML = '<div class="empty">Brak wiadomości lub czat jest prywatny.</div>';
+    // Roblox zwraca listę bezpośrednio lub w polu data
+    var convList = Array.isArray(convRes) ? convRes : (convRes.data || convRes.conversations || []);
+    if (!convList.length) {
+      q('cPanel').innerHTML = '<div class="empty">Brak wiadomości.<br><small style="color:var(--muted)">Czat może być wyłączony dla tego konta (ustawienia prywatności Roblox).</small></div>';
       return;
     }
     var html = '';
-    convRes.slice(0, 15).forEach(function(conv) {
-      var title = conv.title || 'Rozmowa';
-      var last = conv.chatMembers ? conv.chatMembers.map(function(m){ return m.displayName || m.name; }).join(', ') : '';
-      var msg = conv.lastMessage ? conv.lastMessage.content : 'brak wiadomości';
-      var when = conv.lastMessage && conv.lastMessage.sent ? timeAgo(conv.lastMessage.sent) : '';
+    convList.slice(0, 15).forEach(function(conv) {
+      var title = conv.title || conv.name || 'Rozmowa';
+      var members = conv.participants || conv.chatMembers || [];
+      var last = members.map(function(m){ return m.displayName || m.name || ''; }).filter(Boolean).join(', ');
+      var lastMsg = conv.lastMessage || conv.latestMessage || {};
+      var msg = lastMsg.content || lastMsg.body || lastMsg.message || '(brak wiadomości)';
+      var when = lastMsg.sent || lastMsg.sentAt || lastMsg.timestamp;
       html += '<div class="chat-row">' +
-        '<div class="chat-who">' + escHtml(title) + (last ? ' · ' + escHtml(last) : '') + '</div>' +
+        '<div class="chat-who">' + escHtml(title) + (last ? ' · <span style=\"color:var(--muted)\">' + escHtml(last) + '</span>' : '') + '</div>' +
         '<div class="chat-msg">' + escHtml(msg) + '</div>' +
-        '<div class="chat-time">' + when + '</div>' +
+        '<div class="chat-time">' + (when ? timeAgo(when) : '') + '</div>' +
         '</div>';
     });
     q('cPanel').innerHTML = html || '<div class="empty">Brak wiadomości.</div>';
