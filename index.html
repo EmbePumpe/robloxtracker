@@ -129,61 +129,65 @@ body{background:var(--bg);color:var(--text);font-family:var(--display);min-heigh
 
 <script>
 // ─── PROXY SYSTEM ─────────────────────────────────────────────────────────────
-// roproxy.com = Roblox-dedykowane CORS proxy (zamienia subdomenę, np. users.roblox.com → users.roproxy.com)
-// Fallback: ogólne proxy GET
+// WORKER_URL = Twój Cloudflare Worker (instrukcja w pliku worker.js)
+// Ustaw po deployu, np: 'https://roblox-proxy.TWOJANAZWA.workers.dev'
+var WORKER_URL = 'https://my-worker.k4rol1234.workers.dev';
 
-function toRoproxy(url) {
-  // https://users.roblox.com/... → https://users.roproxy.com/...
-  return url.replace('roblox.com', 'roproxy.com');
+function proxyGet(url) {
+  if (WORKER_URL) return WORKER_URL + '?url=' + encodeURIComponent(url);
+  // Fallback bez workera - tylko te proxy które działają z GitHub Pages
+  return 'https://corsproxy.io/?url=' + encodeURIComponent(url);
 }
 
-const GET_PROXIES = [
-  u => toRoproxy(u),                                                             // roproxy - Roblox dedykowane, najlepsze
-  u => 'https://corsproxy.io/?url=' + encodeURIComponent(u),
-  u => 'https://api.allorigins.win/raw?url=' + encodeURIComponent(u),
-  u => 'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(u),
-];
+function proxyPost(url) {
+  if (WORKER_URL) return WORKER_URL + '?url=' + encodeURIComponent(url);
+  return 'https://corsproxy.io/?url=' + encodeURIComponent(url);
+}
 
 async function rFetch(url) {
+  var proxies = WORKER_URL
+    ? [WORKER_URL + '?url=' + encodeURIComponent(url)]
+    : [
+        'https://corsproxy.io/?url=' + encodeURIComponent(url),
+        'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(url),
+      ];
+
   var lastErr;
-  for (var i = 0; i < GET_PROXIES.length; i++) {
+  for (var i = 0; i < proxies.length; i++) {
     try {
-      var proxyUrl = GET_PROXIES[i](url);
-      var r = await fetch(proxyUrl, { signal: AbortSignal.timeout(8000) });
+      var r = await fetch(proxies[i], { signal: AbortSignal.timeout(9000) });
       if (!r.ok) throw new Error('HTTP ' + r.status);
       var txt = await r.text();
-      if (!txt || txt[0] === '<' || txt.indexOf('not in allowlist') > -1) throw new Error('Proxy error page');
+      if (!txt || txt[0] === '<' || txt.indexOf('not in allowlist') > -1 || txt.indexOf('ERR_') > -1)
+        throw new Error('Proxy blad: ' + txt.substring(0,80));
       return JSON.parse(txt);
-    } catch(e) { lastErr = e; }
+    } catch(e) { lastErr = e; console.warn('rFetch fail [' + i + ']:', e.message); }
   }
-  throw new Error('Brak połączenia z Roblox (' + (lastErr ? lastErr.message : '') + ')');
+  throw new Error('Blad polaczenia: ' + (lastErr ? lastErr.message : 'nieznany'));
 }
 
-// POST proxy — presence.roblox.com i username lookup wymagają POST
-// roproxy obsługuje też POST!
-const POST_PROXIES = [
-  u => toRoproxy(u),                                                             // roproxy primary
-  u => 'https://corsproxy.io/?url=' + encodeURIComponent(u),
-  u => 'https://api.allorigins.win/raw?url=' + encodeURIComponent(u),
-];
-
 async function rPost(url, body) {
+  var proxies = WORKER_URL
+    ? [WORKER_URL + '?url=' + encodeURIComponent(url)]
+    : ['https://corsproxy.io/?url=' + encodeURIComponent(url)];
+
   var lastErr;
-  for (var i = 0; i < POST_PROXIES.length; i++) {
+  for (var i = 0; i < proxies.length; i++) {
     try {
-      var r = await fetch(POST_PROXIES[i](url), {
+      var r = await fetch(proxies[i], {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-requested-with': 'XMLHttpRequest' },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
-        signal: AbortSignal.timeout(8000)
+        signal: AbortSignal.timeout(9000)
       });
       if (!r.ok) throw new Error('HTTP ' + r.status);
       var txt = await r.text();
-      if (!txt || txt[0] === '<' || txt.indexOf('not in allowlist') > -1) throw new Error('Proxy error page');
+      if (!txt || txt[0] === '<' || txt.indexOf('not in allowlist') > -1)
+        throw new Error('Proxy blad');
       return JSON.parse(txt);
-    } catch(e) { lastErr = e; }
+    } catch(e) { lastErr = e; console.warn('rPost fail [' + i + ']:', e.message); }
   }
-  throw new Error('POST failed: ' + (lastErr ? lastErr.message : ''));
+  throw new Error('POST blad: ' + (lastErr ? lastErr.message : 'nieznany'));
 }
 
 // ─── STATE ────────────────────────────────────────────────────────────────────
