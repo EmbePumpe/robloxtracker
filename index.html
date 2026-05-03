@@ -8,11 +8,43 @@
 <style>
 :root{--bg:#0a0a0f;--surface:#13131a;--surface2:#1c1c27;--border:rgba(255,255,255,0.07);--accent:#00e5a0;--accent2:#7c6fff;--warn:#ff6b6b;--text:#f0f0f8;--muted:#6b6b88;--radius:16px;--mono:'DM Mono',monospace;--display:'Syne',sans-serif}
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-body{background:var(--bg);color:var(--text);font-family:var(--display);min-height:100dvh;max-width:500px;margin:0 auto;padding:0 0 40px}
+body{background:var(--bg);color:var(--text);font-family:var(--display);min-height:100dvh;max-width:500px;margin:0 auto;padding:0 0 60px}
+
+/* HEADER */
 .hdr{display:flex;align-items:center;justify-content:space-between;padding:20px 20px 0}
 .logo{font-size:18px;font-weight:800;letter-spacing:-0.5px}.logo span{color:var(--accent)}
 .live{width:8px;height:8px;border-radius:50%;background:var(--accent);animation:pulse 2s infinite;display:none}
+.hdr-btns{display:flex;gap:8px;align-items:center}
+.icon-btn{background:var(--surface);border:1px solid var(--border);border-radius:10px;color:var(--muted);font-size:15px;width:36px;height:36px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.icon-btn:hover{border-color:var(--accent);color:var(--accent)}
 @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(0,229,160,.4)}70%{box-shadow:0 0 0 8px rgba(0,229,160,0)}100%{box-shadow:0 0 0 0 rgba(0,229,160,0)}}
+
+/* SETUP SCREEN */
+.setup-screen{padding:20px}
+.setup-hero{text-align:center;padding:20px 0 24px}
+.setup-icon{font-size:48px;margin-bottom:12px}
+.setup-title{font-size:24px;font-weight:800;margin-bottom:8px}
+.setup-sub{font-size:14px;color:var(--muted);line-height:1.6}
+.setup-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:16px;position:relative;overflow:hidden}
+.setup-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--accent),var(--accent2))}
+.setup-step{display:flex;gap:12px;align-items:flex-start;margin-bottom:14px}
+.setup-step:last-child{margin-bottom:0}
+.step-n{width:24px;height:24px;border-radius:50%;background:rgba(0,229,160,.12);color:var(--accent);font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.step-txt{font-size:13px;color:var(--muted);line-height:1.6}
+.step-txt strong{color:var(--text)}
+.step-txt code{background:var(--surface2);padding:2px 6px;border-radius:5px;font-family:var(--mono);font-size:12px;color:var(--accent)}
+.cookie-input{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;font-family:var(--mono);font-size:12px;color:var(--text);outline:none;resize:none;height:80px;margin-top:10px;transition:border-color .2s}
+.cookie-input:focus{border-color:var(--accent)}
+.cookie-input::placeholder{color:var(--muted)}
+.setup-btn{width:100%;background:var(--accent);border:none;border-radius:12px;padding:14px;font-family:var(--display);font-size:15px;font-weight:700;color:#000;cursor:pointer;margin-top:10px;transition:opacity .15s}
+.setup-btn:active{opacity:.85}
+.setup-btn:disabled{opacity:.4;cursor:not-allowed}
+.skip-btn{width:100%;background:none;border:1px solid var(--border);border-radius:12px;padding:12px;font-family:var(--display);font-size:14px;color:var(--muted);cursor:pointer;margin-top:8px;transition:all .15s}
+.skip-btn:hover{border-color:var(--muted);color:var(--text)}
+.warn-box{background:rgba(255,107,107,.08);border:1px solid rgba(255,107,107,.2);border-radius:10px;padding:12px 14px;font-size:12px;color:var(--warn);line-height:1.6;margin-bottom:12px}
+.info-box{background:rgba(0,229,160,.06);border:1px solid rgba(0,229,160,.15);border-radius:10px;padding:12px 14px;font-size:12px;color:rgba(0,229,160,.8);line-height:1.6;margin-bottom:12px}
+
+/* MAIN APP */
 .search{padding:20px 20px 0}
 .slabel{font-size:11px;font-weight:600;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:8px}
 .srow{display:flex;gap:8px}
@@ -20,11 +52,19 @@ body{background:var(--bg);color:var(--text);font-family:var(--display);min-heigh
 .sinput:focus{border-color:var(--accent)}.sinput::placeholder{color:var(--muted)}
 .sbtn{background:var(--accent);border:none;border-radius:12px;width:52px;height:52px;cursor:pointer;font-size:20px;transition:transform .15s,opacity .15s;flex-shrink:0}
 .sbtn:active{transform:scale(.93);opacity:.85}.sbtn:disabled{opacity:.4;cursor:not-allowed}
+
+/* AUTH BADGE */
+.auth-badge{margin:10px 20px 0;display:flex;align-items:center;gap:8px;padding:8px 14px;border-radius:50px;font-size:12px;font-family:var(--mono)}
+.auth-badge.authed{background:rgba(0,229,160,.08);border:1px solid rgba(0,229,160,.2);color:var(--accent)}
+.auth-badge.guest{background:var(--surface);border:1px solid var(--border);color:var(--muted)}
+
 .chips{padding:10px 20px 0;display:flex;gap:6px;flex-wrap:wrap}
 .chip{background:var(--surface);border:1px solid var(--border);border-radius:50px;padding:5px 12px;font-size:12px;font-family:var(--mono);color:var(--muted);cursor:pointer;transition:all .15s}
 .chip:hover{border-color:var(--accent);color:var(--accent)}
 .msg{padding:10px 20px;font-size:13px;font-family:var(--mono);color:var(--muted);display:none}
 .err{margin:10px 20px;background:rgba(255,107,107,.1);border:1px solid rgba(255,107,107,.25);border-radius:12px;padding:14px 16px;font-size:13px;color:var(--warn);font-family:var(--mono);line-height:1.5;display:none}
+
+/* PROFILE */
 .prof{display:none;padding:0 20px}
 .pcard{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:12px;position:relative;overflow:hidden}
 .pcard::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--accent),var(--accent2))}
@@ -51,175 +91,240 @@ body{background:var(--bg);color:var(--text);font-family:var(--display);min-heigh
 .d:nth-child(2){animation-delay:.2s}.d:nth-child(3){animation-delay:.4s}
 @keyframes db{0%,80%,100%{opacity:.3;transform:scale(.7)}40%{opacity:1;transform:scale(1)}}
 .tabs{display:flex;border-bottom:1px solid var(--border);margin-bottom:8px}
-.tab{flex:1;padding:10px 0;font-size:12px;font-weight:600;color:var(--muted);background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;font-family:var(--display);transition:all .15s;letter-spacing:.3px}
+.tab{flex:1;padding:10px 0;font-size:12px;font-weight:600;color:var(--muted);background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;font-family:var(--display);transition:all .15s}
 .tab.active{color:var(--accent);border-bottom-color:var(--accent)}
 .panel{display:none}.panel.active{display:block}
 .frow{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--border)}
 .frow:last-child{border-bottom:none}
 .finit{width:34px;height:34px;border-radius:8px;background:rgba(0,229,160,.1);color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0}
-.fn{flex:1;font-size:14px;font-weight:600}
+.fn{flex:1;font-size:14px;font-weight:600}.fn-sub{font-size:11px;color:var(--muted);font-family:var(--mono)}
 .fo{font-size:11px;color:var(--accent);font-family:var(--mono)}
 .fof{font-size:11px;color:var(--muted);font-family:var(--mono)}
+.fgame{font-size:10px;color:var(--accent2);font-family:var(--mono);margin-top:2px}
 .hrow{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)}
 .hrow:last-child{border-bottom:none}
 .hico{width:38px;height:38px;border-radius:10px;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
 .hn{font-size:14px;font-weight:600;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .hm{font-size:11px;color:var(--muted);margin-top:2px;font-family:var(--mono)}
-.empty{text-align:center;padding:40px 20px;color:var(--muted);font-size:13px}
+.empty{text-align:center;padding:32px 20px;color:var(--muted);font-size:13px;line-height:1.6}
 .note{background:var(--surface2);border-radius:10px;padding:12px 14px;font-size:12px;color:var(--muted);margin-top:10px;line-height:1.6}
+
+/* CHAT TAB */
+.chat-row{padding:12px 0;border-bottom:1px solid var(--border)}
+.chat-row:last-child{border-bottom:none}
+.chat-who{font-size:12px;font-weight:600;color:var(--accent2);margin-bottom:4px;font-family:var(--mono)}
+.chat-msg{font-size:14px;color:var(--text);line-height:1.5}
+.chat-time{font-size:11px;color:var(--muted);margin-top:3px;font-family:var(--mono)}
 </style>
 </head>
 <body>
 
-<div class="hdr">
-  <div class="logo">Roblox<span>Watch</span></div>
-  <div style="display:flex;gap:10px;align-items:center">
-    <span id="refreshTime" style="font-size:11px;font-family:var(--mono);color:var(--muted)"></span>
-    <div class="live" id="liveDot"></div>
-  </div>
-</div>
+<!-- SETUP SCREEN -->
+<div id="setupScreen">
+  <div class="setup-screen">
+    <div class="setup-hero">
+      <div class="setup-icon">🛡️</div>
+      <div class="setup-title">RobloxWatch</div>
+      <div class="setup-sub">Kontrola rodzicielska dla Roblox.<br>Skonfiguruj raz — monitoruj zawsze.</div>
+    </div>
 
-<div class="search">
-  <div class="slabel">Nazwa gracza w Roblox</div>
-  <div class="srow">
-    <input class="sinput" id="uIn" placeholder="np. CoolKid123" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" onkeydown="if(event.key==='Enter')go()">
-    <button class="sbtn" id="goBtn" onclick="go()">&#8594;</button>
-  </div>
-</div>
+    <div class="warn-box">
+      ⚠️ <strong>Bezpieczeństwo:</strong> Cookie jest przechowywane <strong>tylko lokalnie w Twojej przeglądarce</strong> — nie wysyłamy go nigdzie poza Cloudflare Worker który sam hostuje. Nie udostępniaj pliku HTML innym osobom.
+    </div>
 
-<div class="chips" id="chipsEl"></div>
-<div class="msg" id="msgEl"></div>
-<div class="err" id="errEl"></div>
-
-<div class="prof" id="profEl">
-  <div class="pcard">
-    <div class="ptop">
-      <div id="aviWrap"></div>
-      <div>
-        <div class="pname" id="pName"></div>
-        <div class="psub" id="pSub"></div>
-        <div class="pbadge off" id="pBadge"><span class="dot"></span><span id="pBadgeTxt">Offline</span></div>
+    <div class="setup-card">
+      <div style="font-size:13px;font-weight:700;margin-bottom:14px;color:var(--text)">Jak uzyskać cookie .ROBLOSECURITY?</div>
+      <div class="setup-step">
+        <div class="step-n">1</div>
+        <div class="step-txt">Otwórz <strong>nową kartę przeglądarki</strong> i zaloguj się na <strong>konto dziecka</strong> na roblox.com</div>
+      </div>
+      <div class="setup-step">
+        <div class="step-n">2</div>
+        <div class="step-txt">Naciśnij <strong>F12</strong> → zakładka <strong>Application</strong> (Chrome) lub <strong>Storage</strong> (Firefox)</div>
+      </div>
+      <div class="setup-step">
+        <div class="step-n">3</div>
+        <div class="step-txt">Kliknij <strong>Cookies</strong> → <strong>https://www.roblox.com</strong> → znajdź <code>.ROBLOSECURITY</code></div>
+      </div>
+      <div class="setup-step">
+        <div class="step-n">4</div>
+        <div class="step-txt">Skopiuj wartość (długi ciąg znaków) i wklej poniżej</div>
       </div>
     </div>
-    <div class="stats">
-      <div class="stat"><div class="sv" id="sFri">&#8212;</div><div class="sl">Znajomi</div></div>
-      <div class="stat"><div class="sv" id="sFol">&#8212;</div><div class="sl">Obs.</div></div>
-      <div class="stat"><div class="sv" id="sYr">&#8212;</div><div class="sl">Konto od</div></div>
+
+    <div class="setup-card">
+      <div style="font-size:13px;font-weight:700;margin-bottom:8px;color:var(--text)">Wklej cookie dziecka</div>
+      <textarea class="cookie-input" id="cookieInput" placeholder="_|WARNING:-DO-NOT-SHARE-THIS.--Sharing-this-will-allow-someone-to-log-in-as-you-and-to-steal-your-ROBUX-and-items...|_..."></textarea>
+      <button class="setup-btn" onclick="saveCookie()">Zapisz i kontynuuj →</button>
+      <button class="skip-btn" onclick="skipSetup()">Pomiń — używaj bez logowania (ograniczone dane)</button>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="mainApp" style="display:none">
+  <div class="hdr">
+    <div class="logo">Roblox<span>Watch</span></div>
+    <div class="hdr-btns">
+      <span id="refreshTime" style="font-size:11px;font-family:var(--mono);color:var(--muted)"></span>
+      <div class="live" id="liveDot"></div>
+      <button class="icon-btn" onclick="showSetup()" title="Ustawienia">⚙</button>
     </div>
   </div>
 
-  <div class="now" id="nowEl">
-    <div class="now-lbl">Teraz gra</div>
-    <div class="now-game" id="nowGame"></div>
-    <div class="now-meta" id="nowMeta"></div>
+  <div class="auth-badge guest" id="authBadge">
+    <span id="authIcon">○</span>
+    <span id="authText">Tryb gościa — ograniczone dane</span>
   </div>
 
-  <div class="ai" id="aiEl">
-    <div class="ai-lbl">&#9670; Analiza AI &#8212; raport rodzicielski</div>
-    <div id="aiContent"><div class="dots"><div class="d"></div><div class="d"></div><div class="d"></div></div></div>
+  <div class="search">
+    <div class="slabel">Nazwa gracza w Roblox</div>
+    <div class="srow">
+      <input class="sinput" id="uIn" placeholder="np. CoolKid123" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" onkeydown="if(event.key==='Enter')go()">
+      <button class="sbtn" id="goBtn" onclick="go()">&#8594;</button>
+    </div>
   </div>
 
-  <div class="tabs">
-    <button class="tab active" onclick="sw('h',this)">Status / historia</button>
-    <button class="tab" onclick="sw('f',this)">Znajomi</button>
+  <div class="chips" id="chipsEl"></div>
+  <div class="msg" id="msgEl"></div>
+  <div class="err" id="errEl"></div>
+
+  <div class="prof" id="profEl">
+    <div class="pcard">
+      <div class="ptop">
+        <div id="aviWrap"></div>
+        <div>
+          <div class="pname" id="pName"></div>
+          <div class="psub" id="pSub"></div>
+          <div class="pbadge off" id="pBadge"><span class="dot"></span><span id="pBadgeTxt">Offline</span></div>
+        </div>
+      </div>
+      <div class="stats">
+        <div class="stat"><div class="sv" id="sFri">&#8212;</div><div class="sl">Znajomi</div></div>
+        <div class="stat"><div class="sv" id="sFol">&#8212;</div><div class="sl">Obserwujący</div></div>
+        <div class="stat"><div class="sv" id="sYr">&#8212;</div><div class="sl">Konto od</div></div>
+      </div>
+    </div>
+
+    <div class="now" id="nowEl">
+      <div class="now-lbl">Teraz gra</div>
+      <div class="now-game" id="nowGame"></div>
+      <div class="now-meta" id="nowMeta"></div>
+    </div>
+
+    <div class="ai" id="aiEl">
+      <div class="ai-lbl">&#9670; Analiza AI &#8212; raport rodzicielski</div>
+      <div id="aiContent"><div class="dots"><div class="d"></div><div class="d"></div><div class="d"></div></div></div>
+    </div>
+
+    <div class="tabs">
+      <button class="tab active" onclick="sw('h',this)">Historia</button>
+      <button class="tab" onclick="sw('f',this)">Znajomi</button>
+      <button class="tab" id="chatTab" onclick="sw('c',this)" style="display:none">Czat</button>
+    </div>
+    <div class="panel active" id="hPanel"></div>
+    <div class="panel" id="fPanel"></div>
+    <div class="panel" id="cPanel"></div>
   </div>
-  <div class="panel active" id="hPanel"></div>
-  <div class="panel" id="fPanel"></div>
 </div>
 
 <script>
-// ─── PROXY SYSTEM ─────────────────────────────────────────────────────────────
-// WORKER_URL = Twój Cloudflare Worker (instrukcja w pliku worker.js)
-// Ustaw po deployu, np: 'https://roblox-proxy.TWOJANAZWA.workers.dev'
-var WORKER_URL = 'https://my-worker.k4rol1234.workers.dev';
+var WORKER = 'https://my-worker.k4rol1234.workers.dev';
+var S = { uid: null, uname: null };
+var saved = [];
+var cookie = '';
+try { saved = JSON.parse(localStorage.getItem('rw_saved') || '[]'); } catch(e){}
+try { cookie = localStorage.getItem('rw_cookie') || ''; } catch(e){}
 
-function proxyGet(url) {
-  if (WORKER_URL) return WORKER_URL + '?url=' + encodeURIComponent(url);
-  // Fallback bez workera - tylko te proxy które działają z GitHub Pages
-  return 'https://corsproxy.io/?url=' + encodeURIComponent(url);
-}
+function q(id){ return document.getElementById(id); }
+function showMsg(t){ q('msgEl').textContent=t; q('msgEl').style.display='block'; q('errEl').style.display='none'; }
+function showErr(t){ q('errEl').innerHTML=t; q('errEl').style.display='block'; q('msgEl').style.display='none'; }
+function hideMsg(){ q('msgEl').style.display='none'; }
 
-function proxyPost(url) {
-  if (WORKER_URL) return WORKER_URL + '?url=' + encodeURIComponent(url);
-  return 'https://corsproxy.io/?url=' + encodeURIComponent(url);
-}
-
-async function rFetch(url) {
-  var proxies = WORKER_URL
-    ? [WORKER_URL + '?url=' + encodeURIComponent(url)]
-    : [
-        'https://corsproxy.io/?url=' + encodeURIComponent(url),
-        'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(url),
-      ];
-
-  var lastErr;
-  for (var i = 0; i < proxies.length; i++) {
-    try {
-      var r = await fetch(proxies[i], { signal: AbortSignal.timeout(9000) });
-      if (!r.ok) throw new Error('HTTP ' + r.status);
-      var txt = await r.text();
-      if (!txt || txt[0] === '<' || txt.indexOf('not in allowlist') > -1 || txt.indexOf('ERR_') > -1)
-        throw new Error('Proxy blad: ' + txt.substring(0,80));
-      return JSON.parse(txt);
-    } catch(e) { lastErr = e; console.warn('rFetch fail [' + i + ']:', e.message); }
+// ─── INIT ────────────────────────────────────────────────────────────────────
+function init() {
+  if (cookie) {
+    startApp();
+  } else {
+    q('setupScreen').style.display = 'block';
+    q('mainApp').style.display = 'none';
   }
-  throw new Error('Blad polaczenia: ' + (lastErr ? lastErr.message : 'nieznany'));
+}
+
+function saveCookie() {
+  var val = q('cookieInput').value.trim();
+  if (!val || val.length < 50) {
+    alert('To nie wygląda jak prawidłowe cookie. Upewnij się że skopiowałeś całą wartość .ROBLOSECURITY.');
+    return;
+  }
+  cookie = val;
+  try { localStorage.setItem('rw_cookie', cookie); } catch(e){}
+  startApp();
+}
+
+function skipSetup() {
+  cookie = '';
+  startApp();
+}
+
+function showSetup() {
+  q('setupScreen').style.display = 'block';
+  q('mainApp').style.display = 'none';
+  if (cookie) q('cookieInput').value = cookie;
+}
+
+function startApp() {
+  q('setupScreen').style.display = 'none';
+  q('mainApp').style.display = 'block';
+  updateAuthBadge();
+  renderChips();
+}
+
+function updateAuthBadge() {
+  var badge = q('authBadge');
+  if (cookie) {
+    badge.className = 'auth-badge authed';
+    q('authIcon').textContent = '●';
+    q('authText').textContent = 'Zalogowany — pełny dostęp do danych';
+    q('chatTab').style.display = 'flex';
+  } else {
+    badge.className = 'auth-badge guest';
+    q('authIcon').textContent = '○';
+    q('authText').textContent = 'Tryb gościa — ograniczone dane';
+    q('chatTab').style.display = 'none';
+  }
+}
+
+// ─── PROXY FETCH ─────────────────────────────────────────────────────────────
+async function rFetch(url) {
+  var headers = { 'x-roblox-url': url };
+  if (cookie) headers['x-roblox-cookie'] = cookie;
+
+  var r = await fetch(WORKER + '?url=' + encodeURIComponent(url), {
+    headers: headers,
+    signal: AbortSignal.timeout(10000)
+  });
+  var txt = await r.text();
+  if (!txt || txt[0] === '<') throw new Error('Proxy error');
+  return JSON.parse(txt);
 }
 
 async function rPost(url, body) {
-  var proxies = WORKER_URL
-    ? [WORKER_URL + '?url=' + encodeURIComponent(url)]
-    : ['https://corsproxy.io/?url=' + encodeURIComponent(url)];
+  var headers = { 'Content-Type': 'application/json' };
+  if (cookie) headers['x-roblox-cookie'] = cookie;
 
-  var lastErr;
-  for (var i = 0; i < proxies.length; i++) {
-    try {
-      var r = await fetch(proxies[i], {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-        signal: AbortSignal.timeout(9000)
-      });
-      if (!r.ok) throw new Error('HTTP ' + r.status);
-      var txt = await r.text();
-      if (!txt || txt[0] === '<' || txt.indexOf('not in allowlist') > -1)
-        throw new Error('Proxy blad');
-      return JSON.parse(txt);
-    } catch(e) { lastErr = e; console.warn('rPost fail [' + i + ']:', e.message); }
-  }
-  throw new Error('POST blad: ' + (lastErr ? lastErr.message : 'nieznany'));
+  var r = await fetch(WORKER + '?url=' + encodeURIComponent(url), {
+    method: 'POST',
+    headers: headers,
+    body: JSON.stringify(body),
+    signal: AbortSignal.timeout(10000)
+  });
+  var txt = await r.text();
+  if (!txt || txt[0] === '<') throw new Error('Proxy POST error');
+  return JSON.parse(txt);
 }
 
-// ─── STATE ────────────────────────────────────────────────────────────────────
-var S = { uid: null, uname: null };
-var saved = [];
-try { saved = JSON.parse(localStorage.getItem('rw3') || '[]'); } catch(e){}
-
-function q(id) { return document.getElementById(id); }
-function showMsg(t) { q('msgEl').textContent = t; q('msgEl').style.display = 'block'; q('errEl').style.display = 'none'; }
-function showErr(t) { q('errEl').innerHTML = t; q('errEl').style.display = 'block'; q('msgEl').style.display = 'none'; }
-function hideMsg() { q('msgEl').style.display = 'none'; }
-
-function fmtN(n) {
-  if (n == null || n === '?') return '?';
-  if (n >= 1e6) return (Math.round(n/1e5)/10) + 'M';
-  if (n >= 1000) return (Math.round(n/100)/10) + 'K';
-  return '' + n;
-}
-function timeAgo(iso) {
-  if (!iso) return '';
-  var s = (Date.now() - new Date(iso)) / 1000;
-  if (s < 60) return 'przed chwila';
-  if (s < 3600) return Math.floor(s/60) + ' min temu';
-  if (s < 86400) return Math.floor(s/3600) + ' h temu';
-  return Math.floor(s/86400) + ' dni temu';
-}
-function fmtDT(iso) {
-  if (!iso) return '';
-  return new Date(iso).toLocaleString('pl-PL',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
-}
-
-// ─── SEARCH ───────────────────────────────────────────────────────────────────
+// ─── SEARCH ──────────────────────────────────────────────────────────────────
 async function go() {
   var name = q('uIn').value.trim();
   if (!name) return;
@@ -229,32 +334,22 @@ async function go() {
   q('liveDot').style.display = 'none';
 
   try {
-    var uid = null;
-
-    // Próba 1: POST username lookup
-    try {
-      var data = await rPost('https://users.roblox.com/v1/usernames/users', { usernames: [name], excludeBannedUsers: false });
-      if (data.data && data.data.length) { uid = data.data[0].id; S.uname = data.data[0].name; }
-    } catch(e1) {
-      // Próba 2: GET search
-      try {
-        var data2 = await rFetch('https://users.roblox.com/v1/users/search?keyword=' + encodeURIComponent(name) + '&limit=10');
-        if (data2.data && data2.data.length) {
-          var match = data2.data.find(function(u){ return u.name.toLowerCase() === name.toLowerCase(); }) || data2.data[0];
-          uid = match.id; S.uname = match.name;
-        }
-      } catch(e2) {}
+    var data = await rPost('https://users.roblox.com/v1/usernames/users', { usernames: [name], excludeBannedUsers: false });
+    if (!data.data || !data.data.length) {
+      // Fallback: search
+      var data2 = await rFetch('https://users.roblox.com/v1/users/search?keyword=' + encodeURIComponent(name) + '&limit=10');
+      if (!data2.data || !data2.data.length) {
+        showErr('Nie znaleziono gracza <b>"' + name + '"</b>. Sprawdź pisownię.');
+        return;
+      }
+      var match = data2.data.find(function(u){ return u.name.toLowerCase() === name.toLowerCase(); }) || data2.data[0];
+      S.uid = match.id; S.uname = match.name;
+    } else {
+      S.uid = data.data[0].id; S.uname = data.data[0].name;
     }
-
-    if (!uid) {
-      showErr('Nie znaleziono gracza <b>"' + name + '"</b>.<br>Sprawdz pisownie. Jesli blad sie powtarza, Roblox API moze byc chwilowo niedostepne — sprobuj za minute.');
-      return;
-    }
-
-    S.uid = uid;
     await loadProfile();
   } catch(e) {
-    showErr('Blad polaczenia: ' + e.message);
+    showErr('Błąd połączenia: ' + e.message);
   } finally {
     q('goBtn').disabled = false;
   }
@@ -262,36 +357,34 @@ async function go() {
 
 // ─── PROFILE ─────────────────────────────────────────────────────────────────
 async function loadProfile() {
-  showMsg('Pobieranie profilu...');
+  showMsg('Pobieranie danych...');
 
-  var results = await Promise.allSettled([
+  var calls = [
     rFetch('https://users.roblox.com/v1/users/' + S.uid),
-    rPost('https://presence.roblox.com/v1/presence/users', { userIds: [S.uid] }),  // presence wymaga POST!
+    rPost('https://presence.roblox.com/v1/presence/users', { userIds: [S.uid] }),
     rFetch('https://friends.roblox.com/v1/users/' + S.uid + '/friends?userSort=StatusAlphabetical'),
     rFetch('https://friends.roblox.com/v1/users/' + S.uid + '/followers/count'),
-  ]);
+  ];
 
+  var results = await Promise.allSettled(calls);
   var user    = results[0].status === 'fulfilled' ? results[0].value : {};
   var presRaw = results[1].status === 'fulfilled' ? results[1].value : null;
-  var friends = results[2].status === 'fulfilled' ? (results[2].value.data||[]) : [];
+  var friends = results[2].status === 'fulfilled' ? (results[2].value.data || []) : [];
   var folCnt  = results[3].status === 'fulfilled' ? results[3].value.count : null;
 
-  console.log("PRESENCE RAW:", JSON.stringify(presRaw));
-  console.log("PRESENCE STATUS:", results[1].status, results[1].reason ? String(results[1].reason) : "ok");
-
+  // Parse presence
   var pres = {};
   if (presRaw) {
-    if (presRaw.userPresences && presRaw.userPresences.length) { pres = presRaw.userPresences[0]; }
-    else if (Array.isArray(presRaw) && presRaw.length) { pres = presRaw[0]; }
-    else if (presRaw.userPresenceType !== undefined) { pres = presRaw; }
+    if (presRaw.userPresences && presRaw.userPresences.length) pres = presRaw.userPresences[0];
+    else if (Array.isArray(presRaw) && presRaw.length) pres = presRaw[0];
+    else if (presRaw.userPresenceType !== undefined) pres = presRaw;
   }
-  console.log("PRES PARSED:", JSON.stringify(pres));
 
   hideMsg();
 
-  // Avatar — inicjaly fallback, potem laduje obrazek
+  // Avatar
   var aw = q('aviWrap');
-  var init = ((user.displayName||user.name||'?').substring(0,2)).toUpperCase();
+  var init = ((user.displayName || user.name || '?').substring(0,2)).toUpperCase();
   aw.innerHTML = '<div class="avi-init">' + init + '</div>';
   rFetch('https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=' + S.uid + '&size=150x150&format=Png&isCircular=false')
     .then(function(r) { if (r.data && r.data[0] && r.data[0].imageUrl) aw.innerHTML = '<img class="avi" src="' + r.data[0].imageUrl + '">'; })
@@ -304,130 +397,194 @@ async function loadProfile() {
   q('sYr').textContent   = user.created ? new Date(user.created).getFullYear() : '?';
 
   var pt = pres.userPresenceType || 0;
-  var inGame = pt === 2, online = pt > 0;
+  var inGame = pt === 2, inStudio = pt === 3, online = pt > 0;
   var badge = q('pBadge');
   badge.className = 'pbadge ' + (online ? 'on' : 'off');
-  q('pBadgeTxt').textContent = inGame ? 'Teraz gra' : online ? 'Online' : 'Offline';
+  q('pBadgeTxt').textContent = inGame ? 'Teraz gra' : inStudio ? 'Roblox Studio' : online ? 'Online' : 'Offline';
   q('liveDot').style.display = online ? 'block' : 'none';
 
   var nowEl = q('nowEl');
-  if (inGame && pres.lastLocation) {
+  if ((inGame || inStudio) && pres.lastLocation) {
     nowEl.style.display = 'block';
     q('nowGame').textContent = pres.lastLocation;
-    q('nowMeta').textContent = pres.lastOnline ? 'Gra od ' + timeAgo(pres.lastOnline) : 'Aktywna sesja';
+    q('nowMeta').textContent = pres.lastOnline ? 'od ' + timeAgo(pres.lastOnline) : 'Aktywna sesja';
   } else {
     nowEl.style.display = 'none';
   }
 
-  renderHistory(pres);
+  renderHistory(pres, user);
   renderFriends(friends);
+
+  // Czat tylko z cookie
+  if (cookie) {
+    q('chatTab').style.display = 'block';
+    loadChats();
+  }
 
   q('refreshTime').textContent = new Date().toLocaleTimeString('pl-PL',{hour:'2-digit',minute:'2-digit'});
   q('profEl').style.display = 'block';
 
-  // Zapisz w historii
   if (!saved.find(function(s){ return s.id === S.uid; })) {
     saved.unshift({ id: S.uid, name: S.uname || user.name });
     if (saved.length > 8) saved = saved.slice(0, 8);
-    try { localStorage.setItem('rw3', JSON.stringify(saved)); } catch(e){}
+    try { localStorage.setItem('rw_saved', JSON.stringify(saved)); } catch(e){}
   }
   renderChips();
   runAI(user, pres, friends);
 }
 
-function renderHistory(pres) {
+// ─── CHAT (tylko z cookie) ────────────────────────────────────────────────────
+async function loadChats() {
+  q('cPanel').innerHTML = '<div class="msg" style="display:block;padding:20px 0">Ładowanie czatów...</div>';
+  try {
+    // Pobierz konwersacje
+    var convRes = await rFetch('https://chat.roblox.com/v2/get-user-conversations?pageNumber=1&pageSize=20');
+    if (!convRes || !convRes.length) {
+      q('cPanel').innerHTML = '<div class="empty">Brak wiadomości lub czat jest prywatny.</div>';
+      return;
+    }
+    var html = '';
+    convRes.slice(0, 15).forEach(function(conv) {
+      var title = conv.title || 'Rozmowa';
+      var last = conv.chatMembers ? conv.chatMembers.map(function(m){ return m.displayName || m.name; }).join(', ') : '';
+      var msg = conv.lastMessage ? conv.lastMessage.content : 'brak wiadomości';
+      var when = conv.lastMessage && conv.lastMessage.sent ? timeAgo(conv.lastMessage.sent) : '';
+      html += '<div class="chat-row">' +
+        '<div class="chat-who">' + escHtml(title) + (last ? ' · ' + escHtml(last) : '') + '</div>' +
+        '<div class="chat-msg">' + escHtml(msg) + '</div>' +
+        '<div class="chat-time">' + when + '</div>' +
+        '</div>';
+    });
+    q('cPanel').innerHTML = html || '<div class="empty">Brak wiadomości.</div>';
+  } catch(e) {
+    q('cPanel').innerHTML = '<div class="empty">Błąd ładowania czatów.<br><small style="color:var(--muted)">' + e.message + '</small></div>';
+  }
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ─── HISTORY ─────────────────────────────────────────────────────────────────
+function renderHistory(pres, user) {
   var el = q('hPanel');
   var pt = pres.userPresenceType || 0;
   var items = [];
+
   if (pt === 2 && pres.lastLocation)
-    items.push({ ico: '&#x1F7E2;', name: pres.lastLocation, meta: 'Teraz &bull; aktywna sesja' });
+    items.push({ ico: '🟢', name: pres.lastLocation, meta: 'Teraz gra &bull; aktywna sesja' });
+  else if (pt === 3)
+    items.push({ ico: '🔧', name: 'Roblox Studio', meta: 'Tworzy lub edytuje grę' });
+  else if (pt === 1)
+    items.push({ ico: '🌐', name: pres.lastLocation || 'Roblox.com', meta: 'Na stronie Roblox' });
+
   if (pres.lastOnline && pt !== 2)
-    items.push({ ico: '&#127918;', name: pres.lastLocation || 'Roblox', meta: 'Ostatnio: ' + timeAgo(pres.lastOnline) + ' &middot; ' + fmtDT(pres.lastOnline) });
+    items.push({ ico: '🎮', name: pres.lastLocation || 'Ostatnia sesja', meta: 'Ostatnio: ' + timeAgo(pres.lastOnline) + ' &middot; ' + fmtDT(pres.lastOnline) });
+
   if (!items.length)
-    items.push({ ico: '&#128164;', name: 'Brak aktywnosci', meta: 'Gracz jest offline' });
+    items.push({ ico: '💤', name: 'Offline', meta: 'Gracz nie jest aktywny' });
 
   el.innerHTML = items.map(function(i){
-    return '<div class="hrow"><div class="hico">' + i.ico + '</div><div><div class="hn">' + i.name + '</div><div class="hm">' + i.meta + '</div></div></div>';
-  }).join('') + '<div class="note">&#8505; Roblox nie udostepnia pelnej historii gier przez publiczne API. Widoczna jest tylko biez&aacute;ca lub ostatnia sesja. Peln&aacute; historia jest dostepna w oficjalnym panelu <b>Roblox Family</b>.</div>';
+    return '<div class="hrow"><div class="hico">' + i.ico + '</div>' +
+      '<div><div class="hn">' + escHtml(i.name) + '</div><div class="hm">' + i.meta + '</div></div></div>';
+  }).join('') + '<div class="note">ℹ Roblox nie udostępnia pełnej historii gier przez API. Widoczna jest bieżąca sesja i ostatnia aktywność.</div>';
 }
 
+// ─── FRIENDS ─────────────────────────────────────────────────────────────────
 function renderFriends(friends) {
   var el = q('fPanel');
   if (!friends.length) {
-    el.innerHTML = '<div class="empty">Brak znajomych lub profil jest prywatny.</div>';
+    el.innerHTML = '<div class="empty">Brak znajomych lub profil jest prywatny.<br><br>' +
+      (cookie ? '' : '<small>Zaloguj się przez cookie żeby zobaczyć pełną listę.</small>') + '</div>';
     return;
   }
-  var s = friends.slice().sort(function(a,b){ return (b.isOnline?1:0)-(a.isOnline?1:0); });
-  el.innerHTML = s.slice(0,30).map(function(f){
+  var sorted = friends.slice().sort(function(a,b){ return (b.isOnline?1:0)-(a.isOnline?1:0); });
+  el.innerHTML = sorted.slice(0,30).map(function(f){
     var init = ((f.displayName||f.name||'?').substring(0,2)).toUpperCase();
-    return '<div class="frow"><div class="finit">' + init + '</div><div class="fn">' + (f.displayName||f.name) + '<br><span style="font-size:11px;color:var(--muted);font-family:var(--mono)">@' + f.name + '</span></div><div class="' + (f.isOnline?'fo':'fof') + '">' + (f.isOnline?'&#9679; online':'offline') + '</div></div>';
+    var game = f.userPresenceType === 2 && f.lastLocation ? '<div class="fgame">▶ ' + escHtml(f.lastLocation) + '</div>' : '';
+    return '<div class="frow">' +
+      '<div class="finit">' + init + '</div>' +
+      '<div class="fn">' + escHtml(f.displayName||f.name) + '<div class="fn-sub">@' + escHtml(f.name) + '</div>' + game + '</div>' +
+      '<div class="' + (f.isOnline?'fo':'fof') + '">' + (f.isOnline?'● online':'offline') + '</div>' +
+      '</div>';
   }).join('');
-  if (friends.length > 30) el.innerHTML += '<div class="empty">...i ' + (friends.length-30) + ' wiecej</div>';
+  if (friends.length > 30) el.innerHTML += '<div class="empty">...i ' + (friends.length-30) + ' więcej</div>';
 }
 
+// ─── AI ANALYSIS ─────────────────────────────────────────────────────────────
 function runAI(user, pres, friends) {
   q('aiEl').style.display = 'block';
   var pt = pres.userPresenceType || 0;
   var inGame = pt === 2, online = pt > 0;
   var onlineFriends = friends.filter(function(f){ return f.isOnline; }).length;
-  var accountAge = user.created ? Math.floor((Date.now() - new Date(user.created)) / (86400*365*1000)) : null;
+  var accountAge = user.created ? Math.floor((Date.now()-new Date(user.created))/(86400*365*1000)) : null;
   var lines = [];
 
-  // Status teraz
   if (inGame && pres.lastLocation) {
-    lines.push('Gracz jest teraz aktywny i gra w <b>' + pres.lastLocation + '</b>.');
+    lines.push('Gracz jest teraz aktywny i gra w <b>' + escHtml(pres.lastLocation) + '</b>.');
+  } else if (pt === 3) {
+    lines.push('Gracz jest teraz w <b>Roblox Studio</b> — prawdopodobnie tworzy lub edytuje grę.');
   } else if (online) {
-    lines.push('Gracz jest teraz zalogowany w Roblox, ale nie jest w żadnej grze.');
+    lines.push('Gracz jest teraz zalogowany na stronie Roblox, ale nie jest w żadnej grze.');
   } else {
-    var lastSeen = pres.lastOnline ? ' (ostatnio widziany: ' + timeAgo(pres.lastOnline) + ')' : '';
+    var lastSeen = pres.lastOnline ? ' (ostatnio widziany ' + timeAgo(pres.lastOnline) + ')' : '';
     lines.push('Gracz jest obecnie offline' + lastSeen + '.');
   }
 
-  // Konto
   if (accountAge !== null) {
-    if (accountAge < 1) lines.push('Konto jest bardzo nowe — założone w tym roku. Warto sprawdzić czy dziecko nie zakłada nowych kont.');
-    else if (accountAge < 2) lines.push('Konto ma około roku — relatywnie nowe.');
-    else lines.push('Konto istnieje od ' + new Date(user.created).getFullYear() + ' (' + accountAge + ' ' + (accountAge===1?'rok':accountAge<5?'lata':'lat') + ') — jest już ugruntowane.');
+    if (accountAge < 1) lines.push('Konto jest bardzo nowe — założone w tym roku. Warto sprawdzić czy to główne konto dziecka.');
+    else lines.push('Konto istnieje od ' + new Date(user.created).getFullYear() + ' (' + accountAge + (accountAge===1?' rok':accountAge<5?' lata':' lat') + ').');
   }
 
-  // Znajomi
   if (friends.length === 0) {
-    lines.push('Gracz nie ma znajomych na liście lub profil jest ustawiony jako prywatny — brak ryzyka związanego z kontaktami.');
-  } else if (friends.length <= 10) {
-    lines.push('Lista znajomych jest mała (' + friends.length + ' osób' + (onlineFriends > 0 ? ', z czego ' + onlineFriends + ' jest teraz online' : '') + ') — to dobry znak.');
-  } else if (friends.length <= 50) {
-    lines.push('Gracz ma ' + friends.length + ' znajomych' + (onlineFriends > 0 ? ', w tym ' + onlineFriends + ' online teraz' : '') + ' — typowa liczba dla aktywnego gracza.');
+    lines.push('Brak widocznych znajomych — profil może być prywatny lub dziecko nie dodało nikogo.');
+  } else if (friends.length > 50) {
+    lines.push('Gracz ma dużą liczbę znajomych (' + friends.length + ')' + (onlineFriends ? ', w tym ' + onlineFriends + ' teraz online' : '') + '. Warto sprawdzić czy dziecko zna te osoby.');
   } else {
-    lines.push('Gracz ma dużą liczbę znajomych (' + friends.length + '). Warto sprawdzić czy dziecko zna te osoby w realnym życiu.');
+    lines.push('Gracz ma ' + friends.length + ' znajomych' + (onlineFriends ? ', z czego ' + onlineFriends + ' jest teraz online' : '') + '.');
   }
 
-  // Rekomendacja
-  lines.push('Pamiętaj, że Roblox Family pozwala ustawić limity czasu gry i blokadę czatu — warto to skonfigurować jeśli jeszcze tego nie zrobiłeś.');
+  if (!cookie) {
+    lines.push('<span style="color:var(--accent2)">Zaloguj się przez cookie żeby zobaczyć czat i pełną historię aktywności.</span>');
+  }
 
   q('aiContent').innerHTML = '<div class="ai-txt">' + lines.join(' ') + '</div>';
 }
 
+// ─── HELPERS ─────────────────────────────────────────────────────────────────
+function fmtN(n) {
+  if (n==null||n==='?') return '?';
+  if (n>=1e6) return (Math.round(n/1e5)/10)+'M';
+  if (n>=1e3) return (Math.round(n/100)/10)+'K';
+  return ''+n;
+}
+function timeAgo(iso) {
+  var s=(Date.now()-new Date(iso))/1000;
+  if (s<60) return 'przed chwilą';
+  if (s<3600) return Math.floor(s/60)+' min temu';
+  if (s<86400) return Math.floor(s/3600)+' h temu';
+  return Math.floor(s/86400)+' dni temu';
+}
+function fmtDT(iso) {
+  return new Date(iso).toLocaleString('pl-PL',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+}
 function sw(p, el) {
   document.querySelectorAll('.tab').forEach(function(t){ t.classList.remove('active'); });
   document.querySelectorAll('.panel').forEach(function(x){ x.classList.remove('active'); });
   el.classList.add('active');
-  q(p + 'Panel').classList.add('active');
+  q(p+'Panel').classList.add('active');
 }
-
 function renderChips() {
   q('chipsEl').innerHTML = saved.map(function(s){
     return '<div class="chip" onclick="loadSaved(' + s.id + ',\'' + s.name + '\')">@' + s.name + '</div>';
   }).join('');
 }
-
 function loadSaved(id, name) {
-  S.uid = id; S.uname = name;
-  q('uIn').value = name;
-  q('profEl').style.display = 'none';
-  loadProfile();
+  S.uid=id; S.uname=name; q('uIn').value=name;
+  q('profEl').style.display='none'; loadProfile();
 }
 
-renderChips();
+init();
 </script>
 </body>
 </html>
