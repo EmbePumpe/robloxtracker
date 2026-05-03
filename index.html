@@ -368,7 +368,16 @@ async function loadProfile() {
   var results = await Promise.allSettled(calls);
   var user    = results[0].status === 'fulfilled' ? results[0].value : {};
   var presRaw = results[1].status === 'fulfilled' ? results[1].value : null;
-  var friends = results[2].status === 'fulfilled' ? (results[2].value.data || []) : [];
+  var friendsRaw = results[2].status === 'fulfilled' ? results[2].value : null;
+  console.log('FRIENDS RAW:', JSON.stringify(friendsRaw));
+  console.log('FRIENDS STATUS:', results[2].status, results[2].reason ? String(results[2].reason) : 'ok');
+  // Roblox /v1/users/{id}/friends zwraca {data:[...]} lub {errors:[...]}
+  var friends = [];
+  if (friendsRaw) {
+    if (friendsRaw.data && friendsRaw.data.length) friends = friendsRaw.data;
+    else if (Array.isArray(friendsRaw)) friends = friendsRaw;
+  }
+  console.log('FRIENDS COUNT:', friends.length);
   var folCnt  = results[3].status === 'fulfilled' ? results[3].value.count : null;
 
   // Parse presence
