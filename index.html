@@ -296,12 +296,14 @@ function updateAuthBadge() {
 }
 
 // ─── PROXY FETCH ─────────────────────────────────────────────────────────────
-async function rFetch(url) {
-  var headers = { 'x-roblox-url': url };
-  if (cookie) headers['x-roblox-cookie'] = cookie;
+function workerUrl(url) {
+  var u = WORKER + '?url=' + encodeURIComponent(url);
+  if (cookie) u += '&c=' + encodeURIComponent(cookie);
+  return u;
+}
 
-  var r = await fetch(WORKER + '?url=' + encodeURIComponent(url), {
-    headers: headers,
+async function rFetch(url) {
+  var r = await fetch(workerUrl(url), {
     signal: AbortSignal.timeout(10000)
   });
   var txt = await r.text();
@@ -310,12 +312,9 @@ async function rFetch(url) {
 }
 
 async function rPost(url, body) {
-  var headers = { 'Content-Type': 'application/json' };
-  if (cookie) headers['x-roblox-cookie'] = cookie;
-
-  var r = await fetch(WORKER + '?url=' + encodeURIComponent(url), {
+  var r = await fetch(workerUrl(url), {
     method: 'POST',
-    headers: headers,
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
     signal: AbortSignal.timeout(10000)
   });
