@@ -503,17 +503,27 @@ function renderFriends(friends) {
       (cookie ? '' : '<small>Zaloguj się przez cookie żeby zobaczyć pełną listę.</small>') + '</div>';
     return;
   }
-  var sorted = friends.slice().sort(function(a,b){ return (b.isOnline?1:0)-(a.isOnline?1:0); });
-  el.innerHTML = sorted.slice(0,30).map(function(f){
-    var init = ((f.displayName||f.name||'?').substring(0,2)).toUpperCase();
-    var game = f.userPresenceType === 2 && f.lastLocation ? '<div class="fgame">▶ ' + escHtml(f.lastLocation) + '</div>' : '';
+  // /v1/my/friends zwraca: id, name, displayName, isOnline, presenceType, userPresenceType, lastLocation
+  var sorted = friends.slice().sort(function(a,b){
+    var ao = a.isOnline || a.presenceType > 0 ? 1 : 0;
+    var bo = b.isOnline || b.presenceType > 0 ? 1 : 0;
+    return bo - ao;
+  });
+  el.innerHTML = sorted.slice(0,50).map(function(f){
+    var name = f.displayName || f.name || f.username || '';
+    var uname = f.name || f.username || '';
+    var init = (name || '?').substring(0,2).toUpperCase();
+    var online = f.isOnline || (f.presenceType > 0) || (f.userPresenceType > 0);
+    var inGame = f.presenceType === 2 || f.userPresenceType === 2;
+    var loc = f.lastLocation || f.gameTitle || '';
+    var game = inGame && loc ? '<div class="fgame">▶ ' + escHtml(loc) + '</div>' : '';
     return '<div class="frow">' +
-      '<div class="finit">' + init + '</div>' +
-      '<div class="fn">' + escHtml(f.displayName||f.name) + '<div class="fn-sub">@' + escHtml(f.name) + '</div>' + game + '</div>' +
-      '<div class="' + (f.isOnline?'fo':'fof') + '">' + (f.isOnline?'● online':'offline') + '</div>' +
+      '<div class="finit">' + escHtml(init) + '</div>' +
+      '<div class="fn">' + escHtml(name) + (uname && uname !== name ? '<div class="fn-sub">@' + escHtml(uname) + '</div>' : '') + game + '</div>' +
+      '<div class="' + (online?'fo':'fof') + '">' + (inGame ? '▶ gra' : online ? '● online' : 'offline') + '</div>' +
       '</div>';
   }).join('');
-  if (friends.length > 30) el.innerHTML += '<div class="empty">...i ' + (friends.length-30) + ' więcej</div>';
+  if (friends.length > 50) el.innerHTML += '<div class="empty">...i ' + (friends.length-50) + ' więcej</div>';
 }
 
 // ─── AI ANALYSIS ─────────────────────────────────────────────────────────────
